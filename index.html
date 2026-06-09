@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Álbum FCM 26 - Edição de Gala Definitiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700;800&family=Outfit:wght@700;900&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* RESET ESTRUTURAL BASE */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Urbanist', sans-serif; }
+        body { background: #121212; display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; overflow: hidden; position: relative; }
+        #erro-carregamento { position: absolute; z-index: 9999; background: #ff003c; color: white; padding: 20px; border-radius: 8px; font-weight: bold; text-align: center; }
+        #album-container { width: 60vw; height: 85vh; max-width: 1100px; max-height: 850px; display: none; transition: all 0.2s ease; position: relative; z-index: 10; }
+        .page { background-color: #0a0a0a; overflow: hidden; width: 100%; height: 100%; }
+        .page-design { width: 100%; height: 100%; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .bg-capa { background: linear-gradient(180deg, #050505 0%, #1a0505 50%, #3a0005 100%); }
+        .bg-interna { background: linear-gradient(135deg, #0a0a0a 60%, #3a000a 100%); }
+        .bg-contra { background: linear-gradient(135deg, #0a0a0a 60%, #1a0005 100%); }
+        .marca-dagua::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-20deg); width: 150%; height: 150%; background-image: url('Siga La Pelota.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: grayscale(100%); opacity: 0.25; z-index: 0; pointer-events: none; }
+        .content-pad { padding: 8% 4% 4% 4%; width: 100%; height: 100%; position: relative; z-index: 2; display: flex; flex-direction: column; }
+        .capa-content { justify-content: space-between; align-items: center; padding-top: 10%; padding-bottom: 8%; width: 100%; height: 100%; }
+        .titulo-capa { color: white; font-size: 22px; letter-spacing: 5px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.8); text-align: center; }
+        .logo-capa { width: 85%; max-height: 45%; object-fit: contain; filter: drop-shadow(0 0 35px rgba(255,0,60,0.7)); z-index: 3;}
+        .capa-footer { width: 100%; background: rgba(0, 0, 0, 0.85); border-top: 5px solid #ff003c; padding: 25px 20px; text-align: center; border-radius: 10px; z-index: 3; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .capa-footer h2 { font-family: 'Outfit', sans-serif; color: #ff003c; font-size: 30px; margin-bottom: 6px; letter-spacing: 1px; font-weight: 900; }
+        .capa-footer p { color: #fff; font-size: 15px; margin-top: 5px; font-weight: bold; }
+        .contra-content { justify-content: space-between; align-items: center; text-align: center; color: #fff; padding-top: 15%; padding-bottom: 10%; width: 100%; height: 100%; }
+        .barcode-box { background: white; padding: 20px 30px; border-radius: 6px; margin-bottom: 5%; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .barcode { width: 160px; height: 50px; background: repeating-linear-gradient(90deg, #000, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 8px, #fff 8px, #fff 10px, #000 10px, #000 14px, #fff 14px, #fff 16px); margin-bottom: 8px; }
+        
+        .top-controls { position: fixed; right: 20px; top: 20px; z-index: 10001; display: flex; gap: 10px; }
+        .control-btn { background: #ff003c; color: white; border: none; padding: 12px 24px; font-family: 'Outfit', sans-serif; font-weight: 900; text-transform: uppercase; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(255,0,60,0.4); transition: 0.2s; }
+        .control-btn:hover { transform: scale(1.05); background: #e60036; }
+        #btn-fullscreen { background: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        #btn-abrir-pacote { background: #00c853; box-shadow: 0 4px 15px rgba(0,200,83,0.4); }
+        #btn-abrir-pacote:hover { background: #00b047; }
+        #btn-abrir-pacote:disabled { background: #222; color: #555; cursor: not-allowed; box-shadow: none; }
+        #nav-album { position: fixed; bottom: 2%; left: 38%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 10002; background: rgba(0, 0, 0, 0.95); padding: 12px 25px; border-radius: 30px; border: 2px solid #ff003c; box-shadow: 0 5px 15px rgba(0,0,0,0.6); }
+        .nav-btn { background: transparent; color: #ccc; border: none; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; padding: 5px 10px; transition: 0.3s; }
+        .nav-btn:hover { color: #ff003c; text-shadow: 0 0 8px rgba(255,0,60,0.8); }
+        .header-info { display: flex; min-height: 20%; gap: 15px; margin-bottom: 3%; align-items: center; }
+        .escudo-box { width: 23.5%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        .escudo-img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transform: scale(1.15); }
+        .texto-clube { flex: 1; color: #fff; display: flex; flex-direction: column; justify-content: center; }
+        .texto-clube h1 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 900; }
+        .texto-clube h3 { font-size: 11px; color: #ff003c; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;}
+        .texto-clube p { font-size: 11px; color: #ccc; line-height: 1.3; }
+        .grid-11 { display: flex; flex-wrap: wrap; gap: 4% 2%; justify-content: center; height: 72%; align-content: flex-start; }
+        .grid-8 { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; }
+        .row-flex { display: flex; gap: 6%; justify-content: center; width: 100%; margin-bottom: 6%; }
+        .slot { width: 23.5%; aspect-ratio: 3/4; border: 2px dashed rgba(255,0,60,0.4); display: flex; justify-content: center; align-items: center; color: #ff003c; font-size: 18px; font-weight: bold; border-radius: 6px; background: rgba(255,255,255,0.02); transition: all 0.3s; }
+        
+        /* MONTAGEM EM CAMADAS DO CARD */
+        .fcm-card-wrapper { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; background-image: url('Modelo_Figurinha-limpa.png') !important; background-size: 100% 100% !important; background-repeat: no-repeat !important; }
+        .slot.card-instalado { border-style: solid; padding: 0; }
+        .moldura-serie-a { border: 3.5px solid #FFD700; box-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
+        .moldura-serie-b { border: 3px solid #C0C0C0; box-shadow: 0 0 10px rgba(192, 192, 192, 0.4); }
+        .tg-miniface { position: absolute; width: 72%; height: 55%; top: 18%; left: 5%; object-fit: contain; object-position: bottom; z-index: 2; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)); }
+        .tg-mini-escudo { position: absolute; width: 22%; height: 22%; top: 5%; left: 6%; object-fit: contain; z-index: 3; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
+        .tg-vertical-team { position: absolute; right: 4%; top: 46%; height: 32%; width: 20%; z-index: 4; writing-mode: vertical-rl; transform: rotate(180deg); display: flex; justify-content: center; align-items: center; color: #4da6ff; font-family: 'Outfit', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; white-space: nowrap; text-shadow: 0 0 4px rgba(77,166,255,0.5); }
+        .tg-info-block { position: absolute; bottom: 0; left: 0; width: 100%; height: 21%; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 1px; }
+        .tg-txt-name { font-family: 'Outfit', sans-serif; color: #fff; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; text-shadow: 0 1px 2px #000; }
+        .tg-txt-stats { font-family: 'Barlow Condensed', sans-serif; color: #FFD700; font-weight: 800; text-shadow: 0 1px 1px #000; }
+        .tg-txt-bio { font-family: 'Barlow Condensed', sans-serif; color: rgba(255,255,255,0.74); font-weight: 700; text-transform: uppercase; }
+        .slot .tg-vertical-team { font-size: 7px; }
+        .slot .tg-txt-name { font-size: 8px; }
+        .slot .tg-txt-stats { font-size: 6px; margin-top: 1px; }
+        .slot .tg-txt-bio { font-size: 4px; margin-top: 2px; }
+        
+        /* 📱 SEÇÃO FIXA SUPERIOR DA GAVETA REAJUSTADA CONTRA TELAS COMPRIMIDAS */
+        #gaveta-carteira { position: fixed; right: -420px; top: 0; width: 400px; height: 100vh; background: #0f0f12; border-left: 3px solid #ff003c; z-index: 10000; box-shadow: -10px 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 15px; }
+        #gaveta-carteira.aberta { right: 0; }
+        
+        .carteira-topo-fixo { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .carteira-header { display: flex; justify-content: space-between; align-items: center; }
+        .carteira-header h2 { font-family: 'Outfit', sans-serif; color: white; font-size: 20px; text-transform: uppercase; }
+        .btn-fechar-gaveta { background: transparent; border: none; color: #666; font-size: 22px; font-weight: bold; cursor: pointer; padding: 0 5px; }
+        .btn-fechar-gaveta:hover { color: #ff003c; }
+        
+        .painel-recursos { display: flex; gap: 8px; }
+        .fcm-estoque-contador { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 6px; border-radius: 6px; text-align: center; color: #aaa; font-size: 10px; font-weight: bold; }
+        .fcm-estoque-contador span { display: block; color: #00c853; font-size: 16px; font-family: 'Outfit', sans-serif; }
+        .fcm-estoque-contador.tickets span { color: #ffab00; }
+        
+        #btn-gastar-ticket { width: 100%; background: #ffab00; color: black; border: none; padding: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
+        #btn-importar-carreira { width: 100%; background: #007bff; color: white; border: none; padding: 8px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 900; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
+
+        /* PAINEL DINÂMICO AUTOMATIZADO DE BANCA DE TROCAS */
+        .box-sistema-troca-lote { background: rgba(255,255,255,0.02); border: 1px solid #ffab00; border-radius: 6px; padding: 10px; display: none; flex-direction: column; gap: 6px; }
+        .box-sistema-troca-lote label { color: #ffab00; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .row-botoes-troca { display: flex; gap: 8px; }
+        .btn-lote-acao { flex: 1; border: none; padding: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; border-radius: 4px; cursor: pointer; color: white; }
+        #btn-criar-proposta { background: #ffaa00; color: black; }
+        #btn-importar-proposta { background: #007bff; }
+
+        /* PAINEL DINÂMICO DO QUIZ DIÁRIO */
+        .box-sistema-quiz { background: rgba(255,255,255,0.03); border: 1px solid #ff003c; border-radius: 6px; padding: 10px; display: none; flex-direction: column; gap: 6px; }
+        .box-sistema-quiz h3 { font-family: 'Outfit', sans-serif; color: white; font-size: 12px; text-transform: uppercase; text-align: center; }
+        .quiz-pergunta-txt { color: #ffab00; font-size: 11px; font-weight: bold; line-height: 1.3; }
+        .quiz-opcoes-wrapper { display: flex; flex-direction: column; gap: 4px; }
+        .quiz-opcao-btn { background: #111; border: 1px solid #333; color: #ccc; padding: 5px 8px; border-radius: 4px; text-align: left; font-size: 10px; cursor: pointer; }
+        .quiz-opcao-btn.selecionada { background: #ff003c; color: white; border-color: #ff003c; font-weight: bold; }
+        #btn-quiz-acao-proximo { background: #00c853; color: white; border: none; padding: 6px; font-weight: bold; border-radius: 4px; text-transform: uppercase; font-size: 10px; cursor: pointer; }
+
+        .box-resgate-codigo { background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .box-resgate-codigo label { color: #aaa; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .row-resgate { display: flex; gap: 8px; }
+        #input-codigo-fcm { flex: 1; background: #000; border: 1px solid #444; border-radius: 4px; color: #fff; padding: 5px 8px; font-family: monospace; font-size: 11px; text-transform: uppercase; }
+        #btn-validar-codigo { background: #00c853; color: white; border: none; padding: 5px 10px; font-weight: bold; font-size: 10px; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
+
+        .carteira-abas { display: flex; gap: 6px; border-bottom: 1px solid #222; padding-bottom: 6px; }
+        .aba-btn { flex: 1; background: #1a1a22; color: #888; border: 1px solid #333; padding: 6px 2px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; text-transform: uppercase; text-align: center; }
+        .aba-btn.ativa { background: #ff003c; color: white; border-color: #ff003c; }
+        
+        /* 🚨 SEÇÃO DE SCROLL TRAVADA PARA GERAR O FEEDBACK COMPACTO EM DEZENAS DE CARDS */
+        .carteira-area-scrollavel { flex: 1 1 auto; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; justify-content: space-between; }
+        .carteira-lista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-content: flex-start; }
+        .carteira-lista::-webkit-scrollbar { width: 4px; }
+        .carteira-lista::-webkit-scrollbar-thumb { background: #ff003c; border-radius: 10px; }
+        
+        .mini-card-container { width: 100%; height: 200px; border: 1px solid #333; border-radius: 6px; overflow: hidden; position: relative; background: #000; cursor: pointer; }
+        
+        .mini-card-slot-tag { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.85); color: #ffffff; font-size: 11px; font-weight: 900; padding: 2px 10px; border-radius: 12px; border: 1.5px solid #ff003c; z-index: 99; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.7); }
+        .zoom-card-slot-tag { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.9); color: #ffffff; font-size: 15px; font-weight: 900; padding: 4px 16px; border-radius: 20px; border: 2px solid #ff003c; z-index: 999; letter-spacing: 1px; box-shadow: 0 0 15px rgba(255, 0, 60, 0.6); }
+        
+        #btn-colar-tudo { width: 100%; background: #00c853; color: white; border: none; padding: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 900; text-transform: uppercase; border-radius: 6px; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 12px rgba(0,200,83,0.3); }
+        
+        .backup-area { display: flex; gap: 8px; margin-top: 8px; border-top: 1px solid #222; padding-top: 8px; }
+        .btn-backup { flex: 1; background: #333; color: #ccc; border: none; padding: 6px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-backup:hover { background: #444; color: white; }
+
+        #fcm-zoom-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.92); z-index: 20000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s ease; cursor: pointer; }
+        #fcm-zoom-overlay.ativo { display: flex; opacity: 1; }
+        .zoom-card-box { width: 440px; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; border: 4px solid #FFD700; box-shadow: 0 10px 40px rgba(255,215,0,0.5); position: relative; }
+    </style>
+</head>
+<body>
+
+    <div id="erro-carregamento">A carregar o álbum e o banco de dados mestre...</div>
+
+    <div class="top-controls">
+        <button id="btn-abrir-pacote" class="control-btn">🎁 Abrir Pacotinho</button>
+        <button id="btn-fullscreen" class="control-btn">Tela Cheia (F11)</button>
+        <button id="btn-toggle-carteira" class="control-btn">Minha Carteira</button>
+    </div>
+
+    <div id="gaveta-carteira">
+        <div class="carteira-topo-fixo">
+            <div class="carteira-header"><h2>Carteira de Cards</h2><button class="btn-fechar-gaveta" id="btn-fechar-gaveta">×</button></div>
+            
+            <div class="painel-recursos">
+                <div class="fcm-estoque-contador tickets">Tickets Ganhos<span id="lbl-tickets-estoque">5</span></div>
+                <div class="fcm-estoque-contador">Pacotes Prontos<span id="lbl-pacotes-estoque">5</span></div>
+            </div>
+            <button id="btn-gastar-ticket">🎰 Trocar 1 Ticket por Pacote</button>
+            <button id="btn-importar-carreira">🎮 Importar Save da Carreira</button>
+            <input type="file" id="file-uploader-carreira" style="display: none;">
+
+            <div class="box-sistema-troca-lote" id="painel-busca-repetidas">
+                <label>🤝 Mesa de Troca Coerente P2P</label>
+                <div class="row-botoes-troca">
+                    <button class="btn-lote-acao" id="btn-criar-proposta">Exportar Minha Lista</button>
+                    <button class="btn-lote-acao" id="btn-importar-proposta">Ler Lista de Amigo</button>
+                    <input type="file" id="file-uploader-troca" style="display: none;" accept=".json">
+                </div>
+            </div>
+
+            <div class="box-sistema-quiz" id="painel-quiz-container">
+                <h3 id="quiz-titulo-contador">Pergunta 1 de 5</h3>
+                <div class="quiz-pergunta-txt" id="quiz-txt-target">Carregando...</div>
+                <div class="quiz-opcoes-wrapper" id="quiz-opcoes-target"></div>
+                <button id="btn-quiz-acao-proximo">Confirmar Resposta</button>
+            </div>
+
+            <div class="box-resgate-codigo">
+                <label>🔑 Cupom Siga La Pelota / FC Mania</label>
+                <div class="row-resgate">
+                    <input type="text" id="input-codigo-fcm" placeholder="FCM26-SLP-XXXXX">
+                    <button id="btn-validar-codigo">Resgatar</button>
+                </div>
+            </div>
+
+            <div class="carteira-abas">
+                <button class="aba-btn ativa" id="aba-novas">Disponíveis</button>
+                <button class="aba-btn" id="aba-repetidas">Repetidas</button>
+                <button class="aba-btn" id="aba-quiz">🧩 Quiz Diário</button>
+            </div>
+        </div>
+        
+        <div class="carteira-area-scrollavel">
+            <div class="carteira-lista"></div>
+            <div style="padding-top:10px; flex-shrink: 0;"><button id="btn-colar-tudo">Colar no Álbum</button></div>
+        </div>
+
+        <div class="backup-area" style="flex-shrink: 0;">
+            <button class="btn-backup" id="btn-export-save">💾 Salvar Save</button>
+            <button class="btn-backup" id="btn-import-save">📂 Ler Save</button>
+            <input type="file" id="file-uploader-save" style="display: none;" accept=".fcm">
+        </div>
+    </div>
+
+    <div id="fcm-zoom-overlay"><div class="zoom-card-box" id="zoom-content-target"></div></div>
+
+    <div id="nav-album">
+        <button class="nav-btn" id="btn-inicio">Capa</button>
+        <button class="nav-btn" id="btn-serie-a">Série A</button>
+        <button class="nav-btn" id="btn-serie-b">Série B</button>
+        <button class="nav-btn" id="btn-fim">Fim</button>
+    </div>
+
+    <div id="album-container">
+        <div id="album">
+            <div class="page">
+                <div class="page-design bg-capa content-pad capa-content">
+                    <div class="titulo-capa">ÁLBUM VIRTUAL OFICIAL</div>
+                    <img src="Logo FCM 26.png" alt="Logo FCM" class="logo-capa" onerror="this.src='FCM26_logo_4K_4096-300x300.webp';">
+                    <div class="capa-footer">
+                        <h2>EDIÇÃO ESPECIAL</h2>
+                        <p>Series A e B do Melhor Patch do Brasil</p>
+                        <p style="color: #aaa; font-size: 11px; margin-top: 10px;">DESENVOLVIDO POR SIGA LA PELOTA</p>
+                    </div>
+                </div>
+            </div>
+            <div class="page">
+                <div class="page-design bg-contra content-pad contra-content">
+                    <div>
+                        <h2 style="font-size:32px; color: white;">FC MANIA 26</h2>
+                        <p style="color:#ff003c; font-weight:bold; margin-top:8px; letter-spacing: 2px;">COLEÇÃO DIGITAL</p>
+                    </div>
+                    <div class="barcode-box">
+                        <div class="barcode"></div>
+                        <div style="color:black; font-size:14px; font-weight:bold; letter-spacing: 2px;">7891026008105</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
+    <script src="perguntas.js"></script>
+    <script src="jogadores.js"></script>
+    
+    <script>
+        // =====================================================================
+        // ANCORAGEM GLOBAL ABSOLUTA - DECLARADA NO TOPO ANTES DE QUALQUER LEITURA DOM
+        // =====================================================================
+        const clubes = [
+            { nome: "Athletico-PR", div: "Brasileirão", fundacao: "26/03/1924", img: "Athletico-PR.png", hist: "Bicampeão da Sul-Americana." },
+            { nome: "Atlético-MG", div: "Brasileirão", fundacao: "25/03/1908", img: "Atlético-MG.png", hist: "Campeão da Libertadores." },
+            { nome: "Bahia", div: "Brasileirão", fundacao: "01/01/1931", img: "Bahia.png", hist: "Colosso do Nordeste." },
+            { nome: "Botafogo", div: "Brasileirão", fundacao: "12/08/1904", img: "Botafogo.png", hist: "O Glorioso base das seleções." },
+            { nome: "Chapecoense", div: "Brasileirão", fundacao: "10/05/1973", img: "Chapecoense.png", hist: "Símbolo de resiliência." },
+            { nome: "Corinthians", div: "Brasileirão", fundacao: "01/09/1910", img: "Corinthians.png", hist: "Bicampeão Mundial FIFA." },
+            { nome: "Coritiba", div: "Brasileirão", fundacao: "12/10/1909", img: "Coritiba.png", hist: "Orgulho do Paraná." },
+            { nome: "Cruzeiro", div: "Brasileirão", fundacao: "02/01/1921", img: "Cruzeiro.png", hist: "Rei de Copas do Brasil." },
+            { nome: "Flamengo", div: "Brasileirão", fundacao: "15/11/1895", img: "Flamengo.png", hist: "Maior torcida do world." },
+            { nome: "Fluminense", div: "Brasileirão", fundacao: "21/07/1902", img: "Fluminense.png", hist: "Campeão da Libertadores." },
+            { nome: "Grêmio", div: "Brasileirão", fundacao: "15/09/1903", img: "Grêmio.png", hist: "Tricampeão da América." },
+            { nome: "Internacional", div: "Brasileirão", fundacao: "04/04/1909", img: "Internacional.png", hist: "Campeão do Mundo FIFA." },
+            { nome: "Mirassol", div: "Brasileirão", fundacao: "09/11/1925", img: "Mirassol.png", hist: "Interior paulista de elite." },
+            { nome: "Palmeiras", div: "Brasileirão", fundacao: "26/08/1914", img: "Palmeiras.png", hist: "O Maior Campeão do Brasil." },
+            { nome: "RB Bragantino", div: "Brasileirão", fundacao: "08/01/1928", img: "RB Bragantino.png", hist: "Projeto global de elite." },
+            { nome: "Remo", div: "Brasileirão", fundacao: "05/02/1905", img: "Remo.png", hist: "O Leão Azul do Norte." },
+            { nome: "Santos", div: "Brasileirão", fundacao: "14/04/1912", img: "Santos.png", hist: "Santuário de Pelé e Neymar." },
+            { nome: "São Paulo", div: "Brasileirão", fundacao: "25/01/1930", img: "São Paulo.png", hist: "Tricampeão Mundial e Soberano." },
+            { nome: "Vasco da Gama", div: "Brasileirão", fundacao: "21/08/1898", img: "Vasco da Gama.png", hist: "Pioneiro e Gigante da Colina." },
+            { nome: "Vitória", div: "Brasileirão", fundacao: "13/05/1899", img: "Vitória.png", hist: "Fábrica lendária de talentos." },
+            
+            { nome: "Amazonas", div: "Série B", fundacao: "23/05/2019", img: "Amazonas.png", hist: "Acessos meteóricos no Norte." },
+            { nome: "América-MG", div: "Série B", fundacao: "30/04/1912", img: "América-MG.png", hist: "Decacampeão de Minas Gerais." },
+            { nome: "Athletic-MG", div: "Série B", fundacao: "27/06/1909", img: "Athletic-MG.png", hist: "Força em ascensão no cenário mineiro." },
+            { nome: "Atlético-GO", div: "Série B", fundacao: "02/04/1937", img: "Atlético-GO.png", hist: "O Dragão do Centro-Oeste." },
+            { nome: "Avaí", div: "Série B", fundacao: "01/09/1923", img: "Avaí.png", hist: "Leão da Ilha de Florianópolis." },
+            { nome: "Botafogo-SP", div: "Série B", fundacao: "12/10/1918", img: "Botafogo-SP.png", hist: "A Pantera de Ribeirão Preto." },
+            { nome: "CRB", div: "Série B", fundacao: "20/09/1912", img: "CRB.png", hist: "O tradicional Galo da Pajuçara." },
+            { nome: "Ceará", div: "Série B", fundacao: "02/06/1914", img: "Ceará.png", hist: "O Vozão de torcida monumental." },
+            { nome: "Criciúma", div: "Série B", fundacao: "13/05/1947", img: "Criciúma.png", hist: "O Tigre carvoeiro campeão nacional." },
+            { nome: "Cuiabá", div: "Série B", fundacao: "12/12/2001", img: "Cuiabá.png", hist: "Revolução do esporte no Mato Grosso." },
+            { nome: "Fortaleza", div: "Série B", fundacao: "18/10/1918", img: "Fortaleza.png", hist: "Trajetória continental fantástica." },
+            { nome: "Goiás", div: "Série B", fundacao: "06/04/1943", img: "Goiás.png", hist: "O maior campeão do estado goiano." },
+            { nome: "Juventude", div: "Série B", fundacao: "29/06/1913", img: "Juventude.png", hist: "Tradição e força do time Jaconero." },
+            { nome: "Londrina", div: "Série B", fundacao: "05/04/1956", img: "Londrina.png", hist: "O Tubarão mais imponente do interior." },
+            { nome: "Náutico", div: "Série B", fundacao: "07/04/1901", img: "Náutico.png", hist: "O Timbu dos Aflitos." },
+            { nome: "Operario", div: "Série B", fundacao: "01/05/1912", img: "Operario.png", hist: "O Fantasma das divisões nacionais." },
+            { nome: "Ponte Preta", div: "Série B", fundacao: "11/08/1900", img: "Ponte Preta.png", hist: "A Macaca campineira histórica." },
+            { nome: "Sport", div: "Série B", fundacao: "13/05/1905", img: "Sport.png", hist: "O Leão da Ilha do Retiro." },
+            { nome: "São Bernardo", div: "Série B", fundacao: "20/12/2004", img: "São Bernardo.png", hist: "O Bernô em async continuada." },
+            { nome: "Vila Nova-GO", div: "Série B", fundacao: "29/07/1943", img: "Vila Nova-GO.png", hist: "Uma das torcidas mais fanáticas." }
+        ];
+
+        function acharEscudoTratado(nomeTime) {
+            let alvo = clubes.find(c => c.nome.toLowerCase().trim() === nomeTime.toLowerCase().trim());
+            return alvo ? alvo.img : "";
+        }
+
+        function verificarAssinaturaCupom(textoInvisivel, hashInformado) {
+            let textoTratado = textoInvisivel.toLowerCase().trim();
+            let somaToken = 0;
+            for (let i = 0; i < textoTratado.length; i++) {
+                somaToken += textoTratado.charCodeAt(i) * (i + 1);
+            }
+            let hashCalculado = String((somaToken * 37) % 8999 + 1000);
+            return hashCalculado === hashInformado;
+        }
+
+        function gerarHtmlCardMontado(j) {
+            return `
+            <div class="fcm-card-wrapper">
+                <img src="minifaces/p${j.id}.png" class="tg-miniface" onerror="this.alt='FOTO';">
+                <img src="escudos/${j.clubeImg}" class="tg-mini-escudo">
+                <div class="tg-vertical-team">${j.clubeNome}</div>
+                <div class="tg-info-block">
+                    <div class="tg-txt-name">${j.nome}</div>
+                    <div class="tg-txt-stats">${j.pac} PAC &nbsp;${j.sho} SHO &nbsp;${j.pas} PAS &nbsp;${j.dri} DRI &nbsp;${j.def} DEF &nbsp;${j.phy} PHY</div>
+                    <div class="tg-txt-bio">ALT: ${j.height} | NASC: ${j.birthdate} | PESO: ${j.weight}</div>
+                </div>
+            </div>`;
+        }
+
+        let fcmSaveData = {
+            tickets: 5,
+            pacotes: 5,
+            disponiveis: [],
+            repetidas: [],
+            colados: {},
+            codigosUsados: [],
+            historicoSavesProcessados: [],
+            ultimoQuizRespondido: ""
+        };
+
+        let figurinhaIdGlobal = 1; const mapeamentoSlots = {}; const bancoMestreJogadores = {}; let pageFlip = null; let paginaSerieA = 1; let paginaSerieB = 41; let abaAtiva = "disponiveis";
+
+        const poolNormais = [];
+        const poolMedios = [];
+        const poolRaros = [];
+
+        let perguntasSorteadasLote = [];
+        let indicePerguntaAtual = 0;
+        let acertosComputados = 0;
+        let opcaoSelecionadaTemporaria = null;
+
+        function salvarProgressoAutomatico() {
+            localStorage.setItem('fcm_album_savegame', JSON.stringify(fcmSaveData));
+            document.getElementById('lbl-tickets-estoque').innerText = fcmSaveData.tickets;
+            document.getElementById('lbl-pacotes-estoque').innerText = fcmSaveData.pacotes;
+            document.getElementById('btn-abrir-pacote').disabled = (fcmSaveData.pacotes <= 0);
+            document.getElementById('btn-gastar-ticket').disabled = (fcmSaveData.tickets <= 0);
+        }
+
+        const obterNumeroSlotPorId = (id) => {
+            let idNum = parseInt(id);
+            return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
+        };
+
+        // =====================================================================
+        // DISPARADOR PRINCIPAL DO AMBIENTE DOM - ORDEM DE LEITURA TOTALMENTE FIXADA
+        // =====================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const albumElement = document.getElementById('album');
+            let htmlGerado = "";
+
+            const saveLocal = localStorage.getItem('fcm_album_savegame');
+            if (saveLocal) { 
+                try { 
+                    let parsed = JSON.parse(saveLocal); 
+                    if(parsed && typeof parsed === 'object') {
+                        fcmSaveData = parsed;
+                        if(!fcmSaveData.codigosUsados) fcmSaveData.codigosUsados = [];
+                        if(!fcmSaveData.historicoSavesProcessados) fcmSaveData.historicoSavesProcessados = [];
+                        if(!fcmSaveData.ultimoQuizRespondido) fcmSaveData.ultimoQuizRespondido = "";
+                    }
+                } catch(e) {} 
+            }
+
+            if (typeof bancoFigurinhas !== 'undefined') {
+                Object.keys(bancoFigurinhas).forEach(nomeClube => {
+                    bancoFigurinhas[nomeClube].forEach(jog => {
+                        let overMedio = Math.round((jog.pac + jog.sho + jog.pas + jog.dri + jog.def + jog.phy) / 6);
+                        
+                        let atletaObjeto = {
+                            id: jog.playerid, nome: jog.nome, pos: jog.pos,
+                            clubeNome: nomeClube.toUpperCase(),
+                            clubeImg: acharEscudoTratado(nomeClube),
+                            pac: jog.pac, sho: jog.sho, pas: jog.pas, dri: jog.dri, def: jog.def, phy: jog.phy,
+                            height: jog.height, birthdate: jog.birthdate, weight: jog.weight,
+                            over: overMedio
+                        };
+
+                        bancoMestreJogadores[jog.playerid] = atletaObjeto;
+
+                        if (overMedio > 76) poolRaros.push(jog.playerid);
+                        else if (overMedio >= 70 && overMedio <= 76) poolMedios.push(jog.playerid);
+                        else poolNormais.push(jog.playerid);
+                    });
+                });
+            }
+
+            let indexPaginaAtual = 1; 
+            clubes.forEach((clube, idxClube) => {
+                let elenco = (typeof bancoFigurinhas !== 'undefined' && bancoFigurinhas[clube.nome]) ? bancoFigurinhas[clube.nome] : [];
+                let slotsEsquerda = ""; let slotsDir1 = "", slotsDir2 = "", slotsDir3 = "";
+
+                if (clube.div === "Brasileirão" && idxClube === 0) paginaSerieA = indexPaginaAtual;
+                if (clube.div === "Série B" && clubes[idxClube - 1]?.div === "Brasileirão") paginaSerieB = indexPaginaAtual;
+
+                const registrarEMontarSlot = (indiceJogador) => {
+                    let numSlotStr = String(figurinhaIdGlobal++).padStart(3, '0');
+                    let player = elenco[indiceJogador];
+                    if (player && player.playerid) {
+                        mapeamentoSlots[player.playerid] = { numSlot: numSlotStr, divisao: clube.div };
+                        
+                        if (fcmSaveData.colados[player.playerid]) {
+                            let classeMoldura = (clube.div === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
+                            let jMestre = bancoMestreJogadores[player.playerid];
+                            return `<div class="slot card-instalado ${classeMoldura}" id="slot-album-${numSlotStr}" data-playerid="${player.playerid}">${gerarHtmlCardMontado(jMestre)}</div>`;
+                        }
+                        return `<div class="slot" id="slot-album-${numSlotStr}">${numSlotStr}</div>`;
+                    }
+                    return `<div class="slot">${numSlotStr}</div>`;
+                };
+
+                for(let i=0; i<11; i++) slotsEsquerda += registrarEMontarSlot(i);
+                for(let i=11; i<14; i++) slotsDir1 += registrarEMontarSlot(i);
+                for(let i=14; i<17; i++) slotsDir2 += registrarEMontarSlot(i);
+                for(let i=17; i<19; i++) slotsDir3 += registrarEMontarSlot(i);
+
+                htmlGerado += `
+                <div class="page"><div class="page-design bg-interna marca-dagua content-pad"><div class="header-info"><div class="escudo-box"><img src="escudos/${clube.img}" class="escudo-img"></div><div class="texto-clube"><h1>${clube.nome}</h1><h3>Fundação: ${clube.fundacao} &nbsp;|&nbsp; Liga: ${clube.div}</h3><p>${clube.hist}</p></div></div><div class="grid-11">${slotsEsquerda}</div></div></div>
+                <div class="page"><div class="page-design bg-interna marca-dagua content-pad"><div class="grid-8"><div class="row-flex">${slotsDir1}</div><div class="row-flex">${slotsDir2}</div><div class="row-flex">${slotsDir3}</div></div></div></div>`;
+                indexPaginaAtual += 2;
+            });
+
+            albumElement.children[0].insertAdjacentHTML('afterend', htmlGerado);
+            document.getElementById('erro-carregamento').style.display = 'none';
+            document.getElementById('album-container').style.display = 'flex';
+
+            pageFlip = new St.PageFlip(albumElement, {
+                width: 450, height: 636, size: "stretch", minWidth: 300, maxWidth: 600, minHeight: 424, maxHeight: 850,
+                showCover: true, drawShadow: true, maxShadowOpacity: 0.6, useMouseEvents: true
+            });
+            pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+
+            const sensorDeTamanho = new ResizeObserver(() => { if (pageFlip) pageFlip.updateFromHtml(document.querySelectorAll('.page')); });
+            sensorDeTamanho.observe(document.getElementById('album-container'));
+
+            const gaveta = document.getElementById('gaveta-carteira');
+            const overlayZoom = document.getElementById('fcm-zoom-overlay');
+            const targetZoom = document.getElementById('zoom-content-target');
+
+            document.getElementById('btn-toggle-carteira').addEventListener('click', () => { gaveta.classList.toggle('aberta'); });
+            document.getElementById('btn-fechar-gaveta').addEventListener('click', () => { gaveta.classList.remove('aberta'); });
+            overlayZoom.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('ativo'); });
+
+            const atualizarInterfaceCarteira = () => {
+                let listaCarteiraElement = document.querySelector('.carteira-lista');
+                listaCarteiraElement.innerHTML = "";
+                
+                document.getElementById('painel-busca-repetidas').style.display = (abaAtiva === "repetidas") ? "flex" : "none";
+                document.getElementById('painel-quiz-container').style.display = (abaAtiva === "quiz") ? "flex" : "none";
+
+                if (abaAtiva === "quiz") { renderizarEstruturaQuizDoDia(); return; }
+
+                let listaAlvo = (abaAtiva === "disponiveis") ? fcmSaveData.disponiveis : fcmSaveData.repetidas;
+
+                if(listaAlvo.length === 0) {
+                    listaCarteiraElement.innerHTML = `<div style="grid-column: span 2; color: #666; text-align: center; font-size: 13px; padding-top: 40px;">Aba Vazia.</div>`;
+                    return;
+                }
+
+                let contagem = {};
+                listaAlvo.forEach(id => contagem[id] = (contagem[id] || 0) + 1);
+
+                let listaOrdenadaMatematica = Object.keys(contagem).map(idStr => {
+                    let idNum = parseInt(idStr);
+                    return { id: idNum, qtd: contagem[idStr], slotStr: obterNumeroSlotPorId(idNum) };
+                });
+
+                listaOrdenadaMatematica.sort((a, b) => parseInt(a.slotStr) - parseInt(b.slotStr));
+
+                listaOrdenadaMatematica.forEach(item => {
+                    let j = bancoMestreJogadores[item.id];
+                    if(j) {
+                        let miniCardHtml = `
+                        <div class="mini-card-container" data-playerid="${item.id}">
+                            <div class="mini-card-slot-tag">Nº ${item.slotStr}</div>
+                            ${item.qtd > 1 ? `<div class="mini-card-count">x${item.qtd}</div>` : ''}
+                            ${gerarHtmlCardMontado(j)}
+                        </div>`;
+                        listaCarteiraElement.insertAdjacentHTML('beforeend', miniCardHtml);
+                    }
+                });
+
+                document.querySelectorAll('.mini-card-container').forEach(el => {
+                    el.onclick = function() {
+                        let pid = this.getAttribute('data-playerid');
+                        let jogadorData = bancoMestreJogadores[pid];
+                        if (jogadorData) {
+                            let numSlotExibicao = obterNumeroSlotPorId(pid);
+                            targetZoom.innerHTML = `
+                                <div class="zoom-card-slot-tag">Nº ${numSlotExibicao}</div>
+                                ${gerarHtmlCardMontado(jogadorData)}
+                            `;
+                            overlayZoom.classList.add('ativo');
+                        }
+                    };
+                });
+            };
+
+            const renderizarEstruturaQuizDoDia = () => {
+                const containerQuiz = document.getElementById('painel-quiz-container');
+                const dataHojeStr = new Date().toISOString().split('T')[0];
+
+                if (fcmSaveData.ultimoQuizRespondido === dataHojeStr) {
+                    containerQuiz.innerHTML = `
+                        <h3>🧩 Quiz do Dia</h3>
+                        <div class="quiz-pergunta-txt" style="text-align:center; color:#aaa; padding: 15px 0;">
+                            ⚽ Você já respondeu o Quiz de hoje! Volte amanhã para faturar mais pacotes!
+                        </div>`;
+                    return;
+                }
+
+                if (perguntasSorteadasLote.length === 0) {
+                    if (typeof perguntasAdicionais === 'undefined' || perguntasAdicionais.length === 0) { return; }
+                    let poolClone = [...perguntasAdicionais];
+                    for (let i = poolClone.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [poolClone[i], poolClone[j]] = [poolClone[j], poolClone[i]];
+                    }
+                    perguntasSorteadasLote = poolClone.slice(0, 5);
+                    indicePerguntaAtual = 0;
+                    acertosComputados = 0;
+                }
+                renderizarPerguntaQuizAtual();
+            };
+
+            const renderizarPerguntaQuizAtual = () => {
+                let p = perguntasSorteadasLote[indicePerguntaAtual];
+                document.getElementById('quiz-titulo-contador').innerText = `Pergunta ${indicePerguntaAtual + 1} de 5`;
+                document.getElementById('quiz-txt-target').innerText = p.pergunta;
+
+                const wrapperOpcoes = document.getElementById('quiz-opcoes-target');
+                wrapperOpcoes.innerHTML = "";
+                opcaoSelecionadaTemporaria = null;
+
+                p.opcoes.forEach(opcao => {
+                    let letra = opcao.trim().substring(0, 1).toUpperCase();
+                    let btn = document.createElement('button');
+                    btn.className = "quiz-opcao-btn";
+                    btn.innerText = opcao;
+                    btn.onclick = function() {
+                        document.querySelectorAll('.quiz-opcao-btn').forEach(b => b.classList.remove('selecionada'));
+                        this.classList.add('selecionada');
+                        opcaoSelecionadaTemporaria = letra;
+                    };
+                    wrapperOpcoes.appendChild(btn);
+                });
+            };
+
+            document.getElementById('btn-quiz-acao-proximo').onclick = function() {
+                if (!opcaoSelecionadaTemporaria) return;
+                let p = perguntasSorteadasLote[indicePerguntaAtual];
+                if (opcaoSelecionadaTemporaria === p.correta.toUpperCase()) acertosComputados++;
+                indicePerguntaAtual++;
+
+                if (indicePerguntaAtual < 5) renderizarPerguntaQuizAtual();
+                else {
+                    let pacotesGanhos = 1;
+                    if (acertosComputados === 5) pacotesGanhos = 10;
+                    else if (acertosComputados === 4) pacotesGanhos = 5;
+                    else if (acertosComputados === 3) pacotesGanhos = 2;
+
+                    fcmSaveData.pacotes += pacotesGanhos;
+                    fcmSaveData.ultimoQuizRespondido = new Date().toISOString().split('T')[0];
+                    salvarProgressoAutomatico();
+                    
+                    alert(`🧩 QUIZ TERMINADO!\n\nVocê acertou ${acertosComputados} de 5 perguntas!\nGanhou +${pacotesGanhos} Pacotes premiados!`);
+                    perguntasSorteadasLote = [];
+                    abaAtiva = "disponiveis";
+                    document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa'));
+                    document.getElementById('aba-novas').classList.add('ativa');
+                    atualizarInterfaceCarteira();
+                }
+            };
+
+            const vincularClickZoomSlotsColados = () => {
+                document.querySelectorAll('.slot.card-instalado').forEach(el => {
+                    el.onclick = function() {
+                        let pid = this.getAttribute('data-playerid');
+                        let jogadorData = bancoMestreJogadores[pid];
+                        if (jogadorData) {
+                            let numSlotExibicao = obterNumeroSlotPorId(pid);
+                            targetZoom.innerHTML = `
+                                <div class="zoom-card-slot-tag">Nº ${numSlotExibicao}</div>
+                                ${gerarHtmlCardMontado(jogadorData)}
+                            `;
+                            overlayZoom.classList.add('ativo');
+                        }
+                    };
+                });
+            };
+
+            // =====================================================================
+            // ENGINE MATCH AUTOMÁTICO CRUZADO P2P PURE LOCAL
+            // =====================================================================
+            document.getElementById('btn-criar-proposta').addEventListener('click', () => {
+                let faltantesIds = [];
+                Object.keys(bancoMestreJogadores).forEach(idStr => {
+                    let idNum = parseInt(idStr);
+                    if (!fcmSaveData.colados[idNum]) faltantesIds.push(idNum);
+                });
+
+                let contratoLote = {
+                    tipo: "PROPOSTA_AUTOMATICA_LOTE",
+                    token_seguranca: "FCM26-MATCH-" + Math.floor(Math.random() * 900000 + 100000),
+                    repetidasProponente: fcmSaveData.repetidas,
+                    faltantesProponente: faltantesIds
+                };
+
+                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contratoLote));
+                let dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", `proposta_match_fcm.json`);
+                dlAnchorElem.click();
+
+                alert("📦 Lista de Inventário exportada! Envie esse JSON para o seu amigo realizar o Match Cruzado.");
+            });
+
+            document.getElementById('btn-importar-proposta').addEventListener('click', () => { document.getElementById('file-uploader-troca').click(); });
+            document.getElementById('file-uploader-troca').addEventListener('change', function(e) {
+                let file = e.target.files[0]; if (!file) return;
+
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        let contrato = JSON.parse(event.target.result);
+
+                        if (contrato.tipo === "PROPOSTA_AUTOMATICA_LOTE") {
+                            let faltantesAmigo = [];
+                            Object.keys(bancoMestreJogadores).forEach(idStr => {
+                                let idNum = parseInt(idStr);
+                                if (!fcmSaveData.colados[idNum]) faltantesAmigo.push(idNum);
+                            });
+
+                            let darParaProponente = [];
+                            contrato.faltantesProponente.forEach(id => {
+                                if (fcmSaveData.repetidas.includes(id)) darParaProponente.push(id);
+                            });
+
+                            let receberDoProponente = [];
+                            contrato.repetidasProponente.forEach(id => {
+                                if (faltantesAmigo.includes(id)) receberDoProponente.push(id);
+                            });
+
+                            let totalParesTrocaveis = Math.min(darParaProponente.length, receberDoProponente.length);
+
+                            if (totalParesTrocaveis === 0) {
+                                alert("⚽ O Match analisou os dois álbuns mas não encontrou nenhuma combinação correspondente!");
+                                return;
+                            }
+
+                            let loteEfetivoDar = darParaProponente.slice(0, totalParesTrocaveis);
+                            let loteEfetivoReceber = receberDoProponente.slice(0, totalParesTrocaveis);
+
+                            let confirmacao = confirm(`🧩 MATCH INTELIGENTE ENCONTRADO!\n\nForam encontrados ${totalParesTrocaveis} pares perfeitos!\n\nVocê vai ENVIAR ${totalParesTrocaveis} e RECEBER ${totalParesTrocaveis}.\n\nDeseja assinar esse contrato?`);
+                            if (!confirmacao) return;
+
+                            loteEfetivoDar.forEach(id => {
+                                let idx = fcmSaveData.repetidas.indexOf(id);
+                                if (idx > -1) fcmSaveData.repetidas.splice(idx, 1);
+                            });
+                            loteEfetivoReceber.forEach(id => {
+                                fcmSaveData.disponiveis.push(id);
+                            });
+
+                            contrato.tipo = "MATCH_CONCLUIDO";
+                            contrato.loteDarProponente = loteEfetivoReceber;
+                            contrato.loteRemoverProponente = loteEfetivoDar;
+
+                            salvarProgressoAutomatico();
+                            atualizarInterfaceCarteira();
+
+                            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contrato));
+                            let dlAnchorElem = document.createElement('a');
+                            dlAnchorElem.setAttribute("href", dataStr);
+                            dlAnchorElem.setAttribute("download", `match_finalizado_comunidade.json`);
+                            dlAnchorElem.click();
+
+                            alert("✅ Lote assinado! Mande o arquivo de volta ao amigo para ele concluir a parte dele.");
+
+                        } else if (contrato.tipo === "MATCH_CONCLUIDO") {
+                            let robertoValido = true;
+                            contrato.loteRemoverProponente.forEach(id => {
+                                if (!fcmSaveData.repetidas.includes(id)) robertoValido = false;
+                            });
+
+                            if (!robertoValido) {
+                                alert("❌ Erro de integridade: Suas repetidas mudaram!");
+                                return;
+                            }
+
+                            contrato.loteRemoverProponente.forEach(id => {
+                                let idx = fcmSaveData.repetidas.indexOf(id);
+                                if (idx > -1) fcmSaveData.repetidas.splice(idx, 1);
+                            });
+                            contrato.loteDarProponente.forEach(id => {
+                                fcmSaveData.disponiveis.push(id);
+                            });
+
+                            salvarProgressoAutomatico();
+                            atualizarInterfaceCarteira();
+                            alert("🎉 TROCA CASADA LIQUIDADA! Seus novos cards estão na aba 'Disponíveis'!");
+                        }
+                    } catch(err) { alert("❌ Arquivo inválido!"); }
+                };
+                reader.readAsText(file);
+            });
+
+            document.getElementById('btn-gastar-ticket').addEventListener('click', () => {
+                if (fcmSaveData.tickets <= 0) return;
+                fcmSaveData.tickets--; fcmSaveData.pacotes++;
+                salvarProgressoAutomatico(); atualizarInterfaceCarteira();
+            });
+
+            document.getElementById('btn-importar-carreira').addEventListener('click', () => { document.getElementById('file-uploader-carreira').click(); });
+            document.getElementById('file-uploader-carreira').addEventListener('change', function(e) {
+                let arquivoEscolhido = e.target.files[0]; if (!arquivoEscolhido) return;
+                let assinaturaUnicaDoArquivo = `${arquivoEscolhido.name}_${arquivoEscolhido.size}_${arquivoEscolhido.lastModified}`;
+                if (fcmSaveData.historicoSavesProcessados.includes(assinaturaUnicaDoArquivo)) { alert("⚽ Seu progresso já está atualizado!"); return; }
+
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    let conteudoTexto = event.target.result;
+                    if (!conteudoTexto.includes("FBCHUNKS") && !conteudoTexto.includes("SaveType_Career")) { alert("❌ Arquivo inválido!"); return; }
+                    let creditosGanhos = Math.floor(Math.random() * 3) + 2; 
+                    fcmSaveData.historicoSavesProcessados.push(assinaturaUnicaDoArquivo);
+                    fcmSaveData.tickets += creditosGanhos; salvarProgressoAutomatico(); atualizarInterfaceCarteira();
+                    alert("🎮 PROGRESSO EXTRAÍDO! +" + creditosGanhos + " Tickets!");
+                };
+                reader.readAsText(arquivoEscolhido, "ISO-8859-1");
+            });
+
+            document.getElementById('btn-validar-codigo').addEventListener('click', function() {
+                let campo = document.getElementById('input-codigo-fcm'); let cod = campo.value.trim().toUpperCase(); if (!cod) return;
+                if (cod === "TESTE100") { fcmSaveData.tickets += 1; campo.value = ""; salvarProgressoAutomatico(); atualizarInterfaceCarteira(); alert("🎟️ Teste Ativo!"); return; }
+                if (fcmSaveData.codigosUsados.includes(cod)) { alert("Cupom já utilizado!"); return; }
+                let partes = cod.split("-");
+                if (partes.length === 5 && partes[0] === "FCM26" && partes[1] === "SLP") {
+                    if (verificarAssinaturaCupom(partes[2] + partes[3], partes[4])) {
+                        let creditosGanhos = parseInt(partes[3]) - 17;
+                        if (creditosGanhos > 0) {
+                            fcmSaveData.codigosUsados.push(cod); fcmSaveData.tickets += creditosGanhos; campo.value = "";
+                            salvarProgressoAutomatico(); atualizarInterfaceCarteira(); alert(`🎟️ +${creditosGanhos} Tickets!`);
+                        }
+                    } else { alert("❌ Cupom inválido."); }
+                }
+            });
+
+            document.getElementById('btn-abrir-pacote').addEventListener('click', () => {
+                if(fcmSaveData.pacotes <= 0) return; fcmSaveData.pacotes--;
+                let poolTotalFallback = Object.keys(bancoMestreJogadores); let figurinhasSorteadas = [];
+                while(figurinhasSorteadas.length < 6) {
+                    let d = Math.floor(Math.random() * 100) + 1; let id = null;
+                    if (d <= 5 && poolRaros.length > 0) id = poolRaros[Math.floor(Math.random() * poolRaros.length)];
+                    else if (d <= 30 && poolMedios.length > 0) id = poolMedios[Math.floor(Math.random() * poolMedios.length)];
+                    else if (poolNormais.length > 0) id = poolNormais[Math.floor(Math.random() * poolNormais.length)];
+                    else id = poolTotalFallback[Math.floor(Math.random() * poolTotalFallback.length)];
+                    if (id && !figurinhasSorteadas.includes(id)) figurinhasSorteadas.push(id);
+                }
+                figurinhasSorteadas.forEach(id => {
+                    if (fcmSaveData.colados[id] || fcmSaveData.disponiveis.includes(id)) fcmSaveData.repetidas.push(id);
+                    else fcmSaveData.disponiveis.push(id);
+                });
+                salvarProgressoAutomatico(); atualizarInterfaceCarteira(); gaveta.classList.add('aberta');
+            });
+
+            document.getElementById('btn-colar-tudo').addEventListener('click', () => {
+                let disponiveis = fcmSaveData.disponiveis; let coladas = 0; let novasRestantes = [];
+                disponiveis.forEach(playerid => {
+                    let infoSlot = mapeamentoSlots[playerid];
+                    if (infoSlot) {
+                        let divSlotReal = document.getElementById(`slot-album-${infoSlot.numSlot}`);
+                        if (divSlotReal && !divSlotReal.classList.contains('card-instalado')) {
+                            let classeMoldura = (infoSlot.divisao === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
+                            let j = bancoMestreJogadores[playerid];
+                            divSlotReal.className = `slot card-instalado ${classeMoldura}`; divSlotReal.setAttribute("data-playerid", playerid);
+                            divSlotReal.innerHTML = gerarHtmlCardMontado(j); fcmSaveData.colados[playerid] = true; coladas++;
+                        } else { novasRestantes.push(playerid); }
+                    } else { novasRestantes.push(playerid); }
+                });
+                fcmSaveData.disponiveis = novasRestantes; salvarProgressoAutomatico(); atualizarInterfaceCarteira(); vincularClickZoomSlotsColados();
+                if(coladas > 0) { gaveta.classList.remove('aberta'); alert(`Sucesso! ${coladas} cards colados.`); }
+            });
+
+            document.getElementById('btn-export-save').addEventListener('click', () => {
+                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fcmSaveData));
+                let dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", "backup_album.fcm"); dlAnchorElem.click();
+            });
+
+            document.getElementById('btn-import-save').addEventListener('click', () => { document.getElementById('file-uploader-save').click(); });
+            document.getElementById('file-uploader-save').addEventListener('change', function(e) {
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        let importData = JSON.parse(event.target.result);
+                        if (importData.colados) {
+                            fcmSaveData = importData; localStorage.setItem('fcm_album_savegame', JSON.stringify(fcmSaveData));
+                            window.location.reload();
+                        }
+                    } catch(err) { alert("Save inválido!"); }
+                };
+                if(e.target.files[0]) reader.readAsText(e.target.files[0]);
+            });
+
+            document.getElementById('aba-novas').addEventListener('click', (e) => { document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa')); e.target.classList.add('ativa'); abaAtiva = "disponiveis"; atualizarInterfaceCarteira(); });
+            document.getElementById('aba-repetidas').addEventListener('click', (e) => { document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa')); e.target.classList.add('ativa'); abaAtiva = "repetidas"; atualizarInterfaceCarteira(); });
+            document.getElementById('aba-quiz').addEventListener('click', (e) => { document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa')); e.target.classList.add('ativa'); abaAtiva = "quiz"; atualizarInterfaceCarteira(); });
+            document.getElementById('btn-fullscreen').addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
+            
+            document.getElementById('btn-inicio').addEventListener('click', () => { pageFlip.flip(0); });
+            document.getElementById('btn-serie-a').addEventListener('click', () => { pageFlip.flip(paginaSerieA); });
+            document.getElementById('btn-serie-b').addEventListener('click', () => { pageFlip.flip(paginaSerieB); });
+            document.getElementById('btn-fim').addEventListener('click', () => { pageFlip.flip(pageFlip.getPageCount() - 1); });
+
+            salvarProgressoAutomatico(); atualizarInterfaceCarteira(); vincularClickZoomSlotsColados();
+        });
+    </script>
+</body>
+</html>
