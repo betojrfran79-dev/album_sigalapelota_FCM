@@ -64,7 +64,7 @@
         .tg-txt-stats { font-family: 'Barlow Condensed', sans-serif; color: #FFD700; font-weight: 800; text-shadow: 0 1px 1px #000; }
         .tg-txt-bio { font-family: 'Barlow Condensed', sans-serif; color: rgba(255,255,255,0.74); font-weight: 700; text-transform: uppercase; }
         
-        /* GAVETA LATERAL COMPACTA */
+        /* GAVETA LATERAL */
         #gaveta-carteira { position: fixed; right: -420px; top: 0; width: 400px; height: 100vh; background: #0f0f12; border-left: 3px solid #ff003c; z-index: 10000; box-shadow: -10px 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 15px; }
         #gaveta-carteira.aberta { right: 0; }
         
@@ -99,7 +99,7 @@
         .quiz-opcao-btn.selecionada { background: #ff003c; color: white; border-color: #ff003c; font-weight: bold; }
         #btn-quiz-acao-proximo { background: #00c853; color: white; border: none; padding: 6px; font-weight: bold; border-radius: 4px; text-transform: uppercase; font-size: 10px; cursor: pointer; }
 
-        .box-resgate-codigo { background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .box-resgate-codigo { background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
         .box-resgate-codigo label { color: #aaa; font-size: 10px; font-weight: bold; text-transform: uppercase; }
         .row-resgate { display: flex; gap: 8px; }
         #input-codigo-fcm { flex: 1; background: #000; border: 1px solid #444; border-radius: 4px; color: #fff; padding: 5px 8px; font-family: monospace; font-size: 11px; text-transform: uppercase; }
@@ -109,7 +109,6 @@
         .aba-btn { flex: 1; background: #1a1a22; color: #888; border: 1px solid #333; padding: 6px 2px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; text-transform: uppercase; text-align: center; }
         .aba-btn.ativa { background: #ff003c; color: white; border-color: #ff003c; }
         
-        /* SCROLL ÁREA CONSTANTE */
         .carteira-area-scrollavel { flex: 1 1 auto; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; justify-content: space-between; }
         .carteira-lista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-content: flex-start; }
         .carteira-lista::-webkit-scrollbar { width: 4px; }
@@ -233,7 +232,59 @@
     
     <script>
         // =====================================================================
-        // ANCORAGEM 1: VARIÁVEIS GLOBAIS ABSOLUTAS (EXECUTADO COM PRECEDÊNCIA MESTRE)
+        // ANCORAGEM GLOBAL ABSOLUTA 1: BASE DE CLUBES E DADOS MESTRE
+        // =====================================================================
+        const clubes = [
+            { nome: "Athletico-PR", div: "Brasileirão", fundacao: "26/03/1924", img: "Athletico-PR.png", hist: "Bicampeão da Sul-Americana." },
+            { nome: "Atlético-MG", div: "Brasileirão", fundacao: "25/03/1908", img: "Atlético-MG.png", hist: "Campeão da Libertadores." },
+            { nome: "Bahia", div: "Brasileirão", fundacao: "01/01/1931", img: "Bahia.png", hist: "Colosso do Nordeste." },
+            { nome: "Botafogo", div: "Brasileirão", fundacao: "12/08/1904", img: "Botafogo.png", hist: "O Glorioso base das seleções." },
+            { nome: "Chapecoense", div: "Brasileirão", fundacao: "10/05/1973", img: "Chapecoense.png", hist: "Símbolo de resiliência." },
+            { nome: "Corinthians", div: "Brasileirão", fundacao: "01/09/1910", img: "Corinthians.png", hist: "Bicampeão Mundial FIFA." },
+            { nome: "Coritiba", div: "Brasileirão", fundacao: "12/10/1909", img: "Coritiba.png", hist: "Orgulho do Paraná." },
+            { nome: "Cruzeiro", div: "Brasileirão", fundacao: "02/01/1921", img: "Cruzeiro.png", hist: "Rei de Copas do Brasil." },
+            { nome: "Flamengo", div: "Brasileirão", fundacao: "15/11/1895", img: "Flamengo.png", hist: "Maior torcida do world." },
+            { nome: "Fluminense", div: "Brasileirão", fundacao: "21/07/1902", img: "Fluminense.png", hist: "Campeão da Libertadores." },
+            { nome: "Grêmio", div: "Brasileirão", fundacao: "15/09/1903", img: "Grêmio.png", hist: "Tricampeão da América." },
+            { nome: "Internacional", div: "Brasileirão", fundacao: "04/04/1909", img: "Internacional.png", hist: "Campeão do Mundo FIFA." },
+            { nome: "Mirassol", div: "Brasileirão", fundacao: "09/11/1925", img: "Mirassol.png", hist: "Interior paulista de elite." },
+            { nome: "Palmeiras", div: "Brasileirão", fundacao: "26/08/1914", img: "Palmeiras.png", hist: "O Maior Campeão do Brasil." },
+            { nome: "RB Bragantino", div: "Brasileirão", fundacao: "08/01/1928", img: "RB Bragantino.png", hist: "Projeto global de elite." },
+            { nome: "Remo", div: "Brasileirão", fundacao: "05/02/1905", img: "Remo.png", hist: "O Leão Azul do Norte." },
+            { nome: "Santos", div: "Brasileirão", fundacao: "14/04/1912", img: "Santos.png", hist: "Santuário de Pelé e Neymar." },
+            { nome: "São Paulo", div: "Brasileirão", fundacao: "25/01/1930", img: "São Paulo.png", hist: "Tricampeão Mundial e Soberano." },
+            { nome: "Vasco da Gama", div: "Brasileirão", fundacao: "21/08/1898", img: "Vasco da Gama.png", hist: "Pioneiro e Gigante da Colina." },
+            { nome: "Vitória", div: "Brasileirão", fundacao: "13/05/1899", img: "Vitória.png", hist: "Fábrica lendária de talentos." },
+            
+            { nome: "Amazonas", div: "Série B", fundacao: "23/05/2019", img: "Amazonas.png", hist: "Acessos meteóricos no Norte." },
+            { nome: "América-MG", div: "Série B", fundacao: "30/04/1912", img: "América-MG.png", hist: "Decacampeão de Minas Gerais." },
+            { nome: "Athletic-MG", div: "Série B", fundacao: "27/06/1909", img: "Athletic-MG.png", hist: "Força em async constante." },
+            { nome: "Atlético-GO", div: "Série B", fundacao: "02/04/1937", img: "Atlético-GO.png", hist: "O Dragão do Centro-Oeste." },
+            { nome: "Avaí", div: "Série B", fundacao: "01/09/1923", img: "Avaí.png", hist: "Leão da Ilha de Florianópolis." },
+            { nome: "Botafogo-SP", div: "Série B", fundacao: "12/10/1918", img: "Botafogo-SP.png", hist: "A Pantera de Ribeirão Preto." },
+            { nome: "CRB", div: "Série B", fundacao: "20/09/1912", img: "CRB.png", hist: "O tradicional Galo da Pajuçara." },
+            { nome: "Ceará", div: "Série B", fundacao: "02/06/1914", img: "Ceará.png", hist: "O Vozão de torcida monumental." },
+            { nome: "Criciúma", div: "Série B", fundacao: "13/05/1947", img: "Criciúma.png", hist: "O Tigre carvoeiro campeão nacional." },
+            { nome: "Cuiabá", div: "Série B", fundacao: "12/12/2001", img: "Cuiabá.png", hist: "Revolução do esporte no Mato Grosso." },
+            { nome: "Fortaleza", div: "Série B", fundacao: "18/10/1918", img: "Fortaleza.png", hist: "Trajetória continental fantástica." },
+            { nome: "Goiás", div: "Série B", fundacao: "06/04/1943", img: "Goiás.png", hist: "O maior campeão do estado goiano." },
+            { nome: "Juventude", div: "Série B", fundacao: "29/06/1913", img: "Juventude.png", hist: "Tradição e força do time Jaconero." },
+            { nome: "Londrina", div: "Série B", fundacao: "05/04/1956", img: "Londrina.png", hist: "O Tubarão mais imponente do interior." },
+            { nome: "Náutico", div: "Série B", fundacao: "07/04/1901", img: "Náutico.png", hist: "O Timbu dos Aflitos." },
+            { nome: "Operario", div: "Série B", fundacao: "01/05/1912", img: "Operario.png", hist: "O Fantasma das divisões nacionais." },
+            { nome: "Ponte Preta", div: "Série B", fundacao: "11/08/1900", img: "Ponte Preta.png", hist: "A Macaca campineira histórica." },
+            { nome: "Sport", div: "Série B", fundacao: "13/05/1905", img: "Sport.png", hist: "O Leão da Ilha do Retiro." },
+            { nome: "São Bernardo", div: "Série B", fundacao: "20/12/2004", img: "São Bernardo.png", hist: "O Bernô em async continuada." },
+            { nome: "Vila Nova-GO", div: "Série B", fundacao: "29/07/1943", img: "Vila Nova-GO.png", hist: "Uma das torcidas mais fanáticas." }
+        ];
+
+        function acharEscudoTratado(nomeTime) {
+            let alvo = clubes.find(c => c.nome.toLowerCase().trim() === nomeTime.toLowerCase().trim());
+            return alvo ? alvo.img : "";
+        }
+
+        // =====================================================================
+        // ANCORAGEM GLOBAL ABSOLUTA 2: INTEGRIDADE DE SCRIPT E ENGENHARIA DE APOIO
         // =====================================================================
         let figurinhaIdGlobal = 1; 
         const mapeamentoSlots = {}; 
@@ -262,58 +313,6 @@
             historicoSavesProcessados: [],
             ultimoQuizRespondido: ""
         };
-
-        // =====================================================================
-        // ANCORAGEM 2: DATABASE DE CLUBES E FUNÇÕES DE TRATAMENTO DE STRING
-        // =====================================================================
-        const clubes = [
-            { nome: "Athletico-PR", div: "Brasileirão", fundacao: "26/03/1924", img: "Athletico-PR.png", hist: "Bicampeão da Sul-Americana." },
-            { nome: "Atlético-MG", div: "Brasileirão", fundacao: "25/03/1908", img: "Atlético-MG.png", hist: "Campeão da Libertadores." },
-            { nome: "Bahia", div: "Brasileirão", fundacao: "01/01/1931", img: "Bahia.png", hist: "Colosso do Nordeste." },
-            { nome: "Botafogo", div: "Brasileirão", fundacao: "12/08/1904", img: "Botafogo.png", hist: "O Glorioso base das seleções." },
-            { nome: "Chapecoense", div: "Brasileirão", fundacao: "10/05/1973", img: "Chapecoense.png", hist: "Símbolo de resiliência." },
-            { nome: "Corinthians", div: "Brasileirão", fundacao: "01/09/1910", img: "Corinthians.png", hist: "Bicampeão Mundial FIFA." },
-            { nome: "Coritiba", div: "Brasileirão", fundacao: "12/10/1909", img: "Coritiba.png", hist: "Orgulho do Paraná." },
-            { nome: "Cruzeiro", div: "Brasileirão", fundacao: "02/01/1921", img: "Cruzeiro.png", hist: "Rei de Copas do Brasil." },
-            { nome: "Flamengo", div: "Brasileirão", fundacao: "15/11/1895", img: "Flamengo.png", hist: "Maior torcida do world." },
-            { nome: "Fluminense", div: "Brasileirão", fundacao: "21/07/1902", img: "Fluminense.png", hist: "Campeão da Libertadores." },
-            { nome: "Grêmio", div: "Brasileirão", fundacao: "15/09/1903", img: "Grêmio.png", hist: "Tricampeão da América." },
-            { nome: "Internacional", div: "Brasileirão", fundacao: "04/04/1909", img: "Internacional.png", hist: "Campeão do Mundo FIFA." },
-            { nome: "Mirassol", div: "Brasileirão", fundacao: "09/11/1925", img: "Mirassol.png", hist: "Interior paulista de elite." },
-            { nome: "Palmeiras", div: "Brasileirão", fundacao: "26/08/1914", img: "Palmeiras.png", hist: "O Maior Campeão do Brasil." },
-            { nome: "RB Bragantino", div: "Brasileirão", fundacao: "08/01/1928", img: "RB Bragantino.png", hist: "Projeto global de elite." },
-            { nome: "Remo", div: "Brasileirão", fundacao: "05/02/1905", img: "Remo.png", hist: "O Leão Azul do Norte." },
-            { nome: "Santos", div: "Brasileirão", fundacao: "14/04/1912", img: "Santos.png", hist: "Santuário de Pelé e Neymar." },
-            { nome: "São Paulo", div: "Brasileirão", fundacao: "25/01/1930", img: "São Paulo.png", hist: "Tricampeão Mundial e Soberano." },
-            { nome: "Vasco da Gama", div: "Brasileirão", fundacao: "21/08/1898", img: "Vasco da Gama.png", hist: "Pioneiro e Gigante da Colina." },
-            { nome: "Vitória", div: "Brasileirão", fundacao: "13/05/1899", img: "Vitória.png", hist: "Fábrica lendária de talentos." },
-            
-            { nome: "Amazonas", div: "Série B", fundacao: "23/05/2019", img: "Amazonas.png", hist: "Acessos meteóricos no Norte." },
-            { nome: "América-MG", div: "Série B", fundacao: "30/04/1912", img: "América-MG.png", hist: "Decacampeão de Minas Gerais." },
-            { nome: "Athletic-MG", div: "Série B", fundacao: "27/06/1909", img: "Athletic-MG.png", hist: "Força em ascensão no cenário mineiro." },
-            { nome: "Atlético-GO", div: "Série B", fundacao: "02/04/1937", img: "Atlético-GO.png", hist: "O Dragão do Centro-Oeste." },
-            { nome: "Avaí", div: "Série B", fundacao: "01/09/1923", img: "Avaí.png", hist: "Leão da Ilha de Florianópolis." },
-            { nome: "Botafogo-SP", div: "Série B", fundacao: "12/10/1918", img: "Botafogo-SP.png", hist: "A Pantera de Ribeirão Preto." },
-            { nome: "CRB", div: "Série B", fundacao: "20/09/1912", img: "CRB.png", hist: "O tradicional Galo da Pajuçara." },
-            { nome: "Ceará", div: "Série B", fundacao: "02/06/1914", img: "Ceará.png", hist: "O Vozão de torcida monumental." },
-            { nome: "Criciúma", div: "Série B", fundacao: "13/05/1947", img: "Criciúma.png", hist: "O Tigre carvoeiro campeão nacional." },
-            { nome: "Cuiabá", div: "Série B", fundacao: "12/12/2001", img: "Cuiabá.png", hist: "Revolução do esporte no Mato Grosso." },
-            { nome: "Fortaleza", div: "Série B", fundacao: "18/10/1918", img: "Fortaleza.png", hist: "Trajetória continental fantástica." },
-            { nome: "Goiás", div: "Série B", fundacao: "06/04/1943", img: "Goiás.png", hist: "O maior campeão do estado goiano." },
-            { nome: "Juventude", div: "Série B", fundacao: "29/06/1913", img: "Juventude.png", hist: "Tradição e força do time Jaconero." },
-            { nome: "Londrina", div: "Série B", fundacao: "05/04/1956", img: "Londrina.png", hist: "O Tubarão mais imponente do interior." },
-            { nome: "Náutico", div: "Série B", fundacao: "07/04/1901", img: "Náutico.png", hist: "O Timbu dos Aflitos." },
-            { nome: "Operario", div: "Série B", fundacao: "01/05/1912", img: "Operario.png", hist: "O Fantasma das divisões nacionais." },
-            { nome: "Ponte Preta", div: "Série B", fundacao: "11/08/1900", img: "Ponte Preta.png", hist: "A Macaca campineira histórica." },
-            { nome: "Sport", div: "Série B", fundacao: "13/05/1905", img: "Sport.png", hist: "O Leão da Ilha do Retiro." },
-            { nome: "São Bernardo", div: "Série B", fundacao: "20/12/2004", img: "São Bernardo.png", hist: "O Bernô em async continuada." },
-            { nome: "Vila Nova-GO", div: "Série B", fundacao: "29/07/1943", img: "Vila Nova-GO.png", hist: "Uma das torcidas mais fanáticas." }
-        ];
-
-        function acharEscudoTratado(nomeTime) {
-            let alvo = clubes.find(c => c.nome.toLowerCase().trim() === nomeTime.toLowerCase().trim());
-            return alvo ? alvo.img : "";
-        }
 
         function verificarAssinaturaCupom(textoInvisivel, hashInformado) {
             let textoTratado = textoInvisivel.toLowerCase().trim();
@@ -351,9 +350,11 @@
             let idNum = parseInt(id);
             return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
         };
-
+    </script>
+    
+    <script>
         // =====================================================================
-        // ANCORAGEM 3: LOGICA DE SELEÇÃO E INICIALIZAÇÃO DE EVENTOS DOM
+        // ANCORAGEM GLOBAL ABSOLUTA 3: PROCESSAMENTO DOM COMPLETO
         // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const albumElement = document.getElementById('album');
@@ -600,7 +601,7 @@
             };
 
             // =====================================================================
-            // ENGINE MATCH AUTOMÁTICO CRUZADO P2P 
+            // ENGINE DE MATCH AUTOMÁTICO CRUZADO P2P PURE LOCAL
             // =====================================================================
             document.getElementById('btn-criar-proposta').addEventListener('click', () => {
                 let faltantesIds = [];
