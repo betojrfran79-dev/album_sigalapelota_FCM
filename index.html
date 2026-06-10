@@ -358,9 +358,11 @@
             let idNum = parseInt(id);
             return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
         };
-
+    </script>
+    
+    <script>
         // =====================================================================
-        // 🔄 BLOCO 2: INICIALIZAÇÃO NATIVA E MONTAGEM DA SÉRIE A + SÉRIE B (100% PRESERVADO)
+        // 🔄 BLOCO 2: INICIALIZAÇÃO NATIVA DO DOM CONTENT LOADED
         // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const albumElement = document.getElementById('album');
@@ -771,7 +773,7 @@
                     if (!conteudoTexto.includes("FBCHUNKS") && !conteudoTexto.includes("SaveType_Career")) { alert("❌ Arquivo inválido!"); return; }
                     let creditosGanhos = Math.floor(Math.random() * 3) + 2; 
                     fcmSaveData.historicoSavesProcessados.push(assinaturaUnicaDoArquivo);
-                    fcmSaveData.tickets += creditosGanhos; salvarProgressoAutomatico(); atualizarInterfaceCarteira();
+                    fcmSaveData.tickets += creditedGanhos; salvarProgressoAutomatico(); atualizarInterfaceCarteira();
                     alert("🎮 PROGRESSO EXTRAÍDO! +" + creditosGanhos + " Tickets!");
                 };
                 reader.readAsText(arquivoEscolhido, "ISO-8859-1");
@@ -811,11 +813,14 @@
                 salvarProgressoAutomatico(); atualizarInterfaceCarteira(); gaveta.classList.add('aberta');
             });
 
-            // MÓDULO DE COLAGEM EXPURGADO CONTRA DUPLICAÇÕES PRESAS
+            // =====================================================================
+            // 🛠️ ATUALIZAÇÃO DO MÓDULO DE COLAGEM COM RENDER LIMPO EM TEMPO REAL
+            // =====================================================================
             document.getElementById('btn-colar-tudo').addEventListener('click', () => {
                 let disponiveis = fcmSaveData.disponiveis; 
                 let coladas = 0; 
                 let novasRestantes = [];
+                let listaCarteiraElement = document.querySelector('.carteira-lista');
 
                 disponiveis.forEach(playerid => {
                     let infoSlot = mapeamentoSlots[playerid];
@@ -827,7 +832,7 @@
                             let j = bancoMestreJogadores[playerid];
                             divSlotReal.className = `slot card-instalado ${classeMoldura}`; 
                             divSlotReal.setAttribute("data-playerid", playerid);
-                            divSlotReal.innerHTML = generarHtmlCardMontado(j); 
+                            divSlotReal.innerHTML = gerarHtmlCardMontado(j); 
                             fcmSaveData.colados[playerid] = true; 
                             coladas++;
                         } 
@@ -841,12 +846,15 @@
 
                 fcmSaveData.disponiveis = novasRestantes; 
                 salvarProgressoAutomatico(); 
+                
+                // 🧠 FORÇA A LIMPEZA TOTAL DA INTERFACE VISUAL ANTES DO REDESENHO
+                listaCarteiraElement.innerHTML = "";
                 atualizarInterfaceCarteira(); 
                 vincularClickZoomSlotsColados();
                 
                 gaveta.classList.remove('aberta');
                 if (coladas > 0) { 
-                    alert(`⚽ SUCESSO!\n\nVocê colou ${coladas} novas figurinhas no seu Álbum!\nOs cards duplicados restantes foram transferidos automaticamente para a sua aba de Repetidas!`); 
+                    alert(`⚽ SUCESSO!\n\nVocê colou ${coladas} novas figurinhas no seu Álbum!\nOs cards duplicados restantes foram movidos instantaneamente para a sua aba de Repetidas!`); 
                 } else {
                     alert(`🔄 ORGANIZAÇÃO CONCLUÍDA!\n\nTodos os cards da aba disponíveis já estavam colados e foram movidos para as suas Repetidas de troca!`);
                 }
