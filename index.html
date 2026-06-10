@@ -15,7 +15,7 @@
         .page { background-color: #0a0a0a; overflow: hidden; width: 100%; height: 100%; }
         .page-design { width: 100%; height: 100%; position: relative; overflow: hidden; display: flex; flex-direction: column; }
         .bg-capa { background: linear-gradient(180deg, #050505 0%, #1a0505 50%, #3a0005 100%); }
-        .bg-interna { background: linear-gradient(135deg, #0a0a0a 60%, #3a000a 100%); }
+        .bg-interna { background: linear-gradient(135deg, #0a0a0a 60%, #3a00a0 100%); }
         .bg-contra { background: linear-gradient(135deg, #0a0a0a 60%, #1a0005 100%); }
         .marca-dagua::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-20deg); width: 150%; height: 150%; background-image: url('Siga La Pelota.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: grayscale(100%); opacity: 0.25; z-index: 0; pointer-events: none; }
         .content-pad { padding: 8% 4% 4% 4%; width: 100%; height: 100%; position: relative; z-index: 2; display: flex; flex-direction: column; }
@@ -68,7 +68,7 @@
         .slot .tg-txt-stats { font-size: 6px; margin-top: 1px; }
         .slot .tg-txt-bio { font-size: 4px; margin-top: 2px; }
         
-        /* 📱 SEÇÃO FIXA SUPERIOR DA GAVETA REAJUSTADA CONTRA TELAS COMPRIMIDAS */
+        /* LAYOUT COMPACTADO DA CARTEIRA */
         #gaveta-carteira { position: fixed; right: -420px; top: 0; width: 400px; height: 100vh; background: #0f0f12; border-left: 3px solid #ff003c; z-index: 10000; box-shadow: -10px 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 15px; }
         #gaveta-carteira.aberta { right: 0; }
         
@@ -113,7 +113,6 @@
         .aba-btn { flex: 1; background: #1a1a22; color: #888; border: 1px solid #333; padding: 6px 2px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px; text-transform: uppercase; text-align: center; }
         .aba-btn.ativa { background: #ff003c; color: white; border-color: #ff003c; }
         
-        /* 🚨 SEÇÃO DE SCROLL TRAVADA PARA GERAR O FEEDBACK COMPACTO EM DEZENAS DE CARDS */
         .carteira-area-scrollavel { flex: 1 1 auto; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; justify-content: space-between; }
         .carteira-lista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-content: flex-start; }
         .carteira-lista::-webkit-scrollbar { width: 4px; }
@@ -243,7 +242,7 @@
     
     <script>
         // =====================================================================
-        // ANCORAGEM GLOBAL ABSOLUTA - DECLARADA NO TOPO ANTES DE QUALQUER LEITURA DOM
+        // ANCORAGEM GLOBAL ABSOLUTA - PRECEDÊNCIA MESTRE ABSOLUTA NO TOPO DO SCRIPT
         // =====================================================================
         const clubes = [
             { nome: "Athletico-PR", div: "Brasileirão", fundacao: "26/03/1924", img: "Athletico-PR.png", hist: "Bicampeão da Sul-Americana." },
@@ -354,7 +353,7 @@
         };
 
         // =====================================================================
-        // DISPARADOR PRINCIPAL DO AMBIENTE DOM - ORDEM DE LEITURA TOTALMENTE FIXADA
+        // DISPARADOR PRINCIPAL DO AMBIENTE DOM (EXECUTA DEPOIS DA ANCORAGEM)
         // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const albumElement = document.getElementById('album');
@@ -601,7 +600,7 @@
             };
 
             // =====================================================================
-            // ENGINE MATCH AUTOMÁTICO CRUZADO P2P PURE LOCAL
+            // ENGINE DE MATCH AUTO CRUZADO FIXADO CONTRA BUG DE TIPAGEM STRING/INT
             // =====================================================================
             document.getElementById('btn-criar-proposta').addEventListener('click', () => {
                 let faltantesIds = [];
@@ -610,10 +609,13 @@
                     if (!fcmSaveData.colados[idNum]) faltantesIds.push(idNum);
                 });
 
+                // Força o array de repetidas a ser exportado como inteiros limpos
+                let repetidasLimpias = fcmSaveData.repetidas.map(id => parseInt(id));
+
                 let contratoLote = {
                     tipo: "PROPOSTA_AUTOMATICA_LOTE",
                     token_seguranca: "FCM26-MATCH-" + Math.floor(Math.random() * 900000 + 100000),
-                    repetidasProponente: fcmSaveData.repetidas,
+                    repetidasProponente: repetidasLimpias,
                     faltantesProponente: faltantesIds
                 };
 
@@ -635,6 +637,9 @@
                     try {
                         let contrato = JSON.parse(event.target.result);
 
+                        // Garante conversão estrita do estoque local do amigo para Inteiros
+                        let minhasRepetidasLimpias = fcmSaveData.repetidas.map(id => parseInt(id));
+
                         if (contrato.tipo === "PROPOSTA_AUTOMATICA_LOTE") {
                             let faltantesAmigo = [];
                             Object.keys(bancoMestreJogadores).forEach(idStr => {
@@ -643,19 +648,21 @@
                             });
 
                             let darParaProponente = [];
-                            contrato.faltantesProponente.forEach(id => {
-                                if (fcmSaveData.repetidas.includes(id)) darParaProponente.push(id);
+                            contrato.faltantesProponente.forEach(idStr => {
+                                let id = parseInt(idStr);
+                                if (minhasRepetidasLimpias.includes(id)) darParaProponente.push(id);
                             });
 
                             let receberDoProponente = [];
-                            contrato.repetidasProponente.forEach(id => {
+                            contrato.repetidasProponente.forEach(idStr => {
+                                let id = parseInt(idStr);
                                 if (faltantesAmigo.includes(id)) receberDoProponente.push(id);
                             });
 
                             let totalParesTrocaveis = Math.min(darParaProponente.length, receberDoProponente.length);
 
                             if (totalParesTrocaveis === 0) {
-                                alert("⚽ O Match analisou os dois álbuns mas não encontrou nenhuma combinação correspondente!");
+                                alert("⚽ O Match analisou os dois álbuns mas não encontrou nenhuma combinação correspondente devido às aspas de texto! Atualize as duas abas.");
                                 return;
                             }
 
@@ -666,7 +673,7 @@
                             if (!confirmacao) return;
 
                             loteEfetivoDar.forEach(id => {
-                                let idx = fcmSaveData.repetidas.indexOf(id);
+                                let idx = fcmSaveData.repetidas.map(x => parseInt(x)).indexOf(id);
                                 if (idx > -1) fcmSaveData.repetidas.splice(idx, 1);
                             });
                             loteEfetivoReceber.forEach(id => {
@@ -690,8 +697,9 @@
 
                         } else if (contrato.tipo === "MATCH_CONCLUIDO") {
                             let robertoValido = true;
-                            contrato.loteRemoverProponente.forEach(id => {
-                                if (!fcmSaveData.repetidas.includes(id)) robertoValido = false;
+                            contrato.loteRemoverProponente.forEach(idStr => {
+                                let id = parseInt(idStr);
+                                if (!fcmSaveData.repetidas.map(x => parseInt(x)).includes(id)) robertoValido = false;
                             });
 
                             if (!robertoValido) {
@@ -699,12 +707,13 @@
                                 return;
                             }
 
-                            contrato.loteRemoverProponente.forEach(id => {
-                                let idx = fcmSaveData.repetidas.indexOf(id);
+                            contrato.loteRemoverProponente.forEach(idStr => {
+                                let id = parseInt(idStr);
+                                let idx = fcmSaveData.repetidas.map(x => parseInt(x)).indexOf(id);
                                 if (idx > -1) fcmSaveData.repetidas.splice(idx, 1);
                             });
-                            contrato.loteDarProponente.forEach(id => {
-                                fcmSaveData.disponiveis.push(id);
+                            contrato.loteDarProponente.forEach(idStr => {
+                                fcmSaveData.disponiveis.push(parseInt(idStr));
                             });
 
                             salvarProgressoAutomatico();
@@ -735,7 +744,7 @@
                     let creditosGanhos = Math.floor(Math.random() * 3) + 2; 
                     fcmSaveData.historicoSavesProcessados.push(assinaturaUnicaDoArquivo);
                     fcmSaveData.tickets += creditosGanhos; salvarProgressoAutomatico(); atualizarInterfaceCarteira();
-                    alert("🎮 PROGRESSO EXTRAÍDO! +" + creditosGanhos + " Tickets!");
+                    alert("🎮 PROGRESSO EXTRAÍDO! +" + creditedGanhos + " Tickets!");
                 };
                 reader.readAsText(arquivoEscolhido, "ISO-8859-1");
             });
@@ -821,10 +830,4 @@
             document.getElementById('btn-inicio').addEventListener('click', () => { pageFlip.flip(0); });
             document.getElementById('btn-serie-a').addEventListener('click', () => { pageFlip.flip(paginaSerieA); });
             document.getElementById('btn-serie-b').addEventListener('click', () => { pageFlip.flip(paginaSerieB); });
-            document.getElementById('btn-fim').addEventListener('click', () => { pageFlip.flip(pageFlip.getPageCount() - 1); });
-
-            salvarProgressoAutomatico(); atualizarInterfaceCarteira(); vincularClickZoomSlotsColados();
-        });
-    </script>
-</body>
-</html>
+            document.getElementById('btn-fim').addEventListener('click
