@@ -17,7 +17,7 @@
         .bg-capa { background: linear-gradient(180deg, #050505 0%, #1a0505 50%, #3a0005 100%); }
         .bg-interna { background: linear-gradient(135deg, #0a0a0a 60%, #3a000a 100%); }
         .bg-contra { background: linear-gradient(135deg, #0a0a0a 60%, #1a0005 100%); }
-        .marca-dagua::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-20deg); width: 150%; height: 150%; background-image: url('Siga La Pelota.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: grayscale(100%); opacity: 0.25; z-index: 0; pointer-events: none; }
+        .marca-dagua::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50 Rogate(-20deg); width: 150%; height: 150%; background-image: url('Siga La Pelota.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: grayscale(100%); opacity: 0.25; z-index: 0; pointer-events: none; }
         .content-pad { padding: 8% 4% 4% 4%; width: 100%; height: 100%; position: relative; z-index: 2; display: flex; flex-direction: column; }
         .capa-content { justify-content: space-between; align-items: center; padding-top: 10%; padding-bottom: 8%; width: 100%; height: 100%; }
         .titulo-capa { color: white; font-size: 22px; letter-spacing: 5px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.8); text-align: center; }
@@ -356,9 +356,11 @@
             let idNum = parseInt(id);
             return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
         };
-
+    </script>
+    
+    <script>
         // =====================================================================
-        // DOM CONTENT LOADED SEPARADO E INTEGRAL (PRESERVADO COM ESCOPO TOTAL)
+        // DOM CONTENT LOADED SEPARADO E INTEGRAL
         // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const albumElement = document.getElementById('album');
@@ -603,9 +605,7 @@
                 });
             };
 
-            // =====================================================================
-            // ENGINE DE MATCH AUTOMÁTICO CRUZADO COM TRANSPARÊNCIA HOMOLOGADA
-            // =====================================================================
+            // ENGINE DE MATCH AUTOMÁTICO CRUZADO P2P 
             document.getElementById('btn-criar-proposta').addEventListener('click', () => {
                 let faltantesIds = [];
                 Object.keys(bancoMestreJogadores).forEach(idStr => {
@@ -810,22 +810,50 @@
                 salvarProgressoAutomatico(); atualizarInterfaceCarteira(); gaveta.classList.add('aberta');
             });
 
+            // =====================================================================
+            // 🚨 NOVO MÓDULO DE COLAGEM EXPURGADO CONTRA DUPLICAÇÕES PRESAS
+            // =====================================================================
             document.getElementById('btn-colar-tudo').addEventListener('click', () => {
-                let disponiveis = fcmSaveData.disponiveis; let coladas = 0; let novasRestantes = [];
+                let disponiveis = fcmSaveData.disponiveis; 
+                let coladas = 0; 
+                let novasRestantes = [];
+
                 disponiveis.forEach(playerid => {
                     let infoSlot = mapeamentoSlots[playerid];
                     if (infoSlot) {
                         let divSlotReal = document.getElementById(`slot-album-${infoSlot.numSlot}`);
-                        if (divSlotReal && !divSlotReal.classList.contains('card-instalado')) {
+                        
+                        // 🟢 CASO 1: O slot ainda está vazio e livre no álbum, cola normalmente
+                        if (divSlotReal && !divSlotReal.classList.contains('card-instalado') && !fcmSaveData.colados[playerid]) {
                             let classeMoldura = (infoSlot.divisao === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
                             let j = bancoMestreJogadores[playerid];
-                            divSlotReal.className = `slot card-instalado ${classeMoldura}`; divSlotReal.setAttribute("data-playerid", playerid);
-                            divSlotReal.innerHTML = gerarHtmlCardMontado(j); fcmSaveData.colados[playerid] = true; coladas++;
-                        } else { novasRestantes.push(playerid); }
-                    } else { novasRestantes.push(playerid); }
+                            divSlotReal.className = `slot card-instalado ${classeMoldura}`; 
+                            divSlotReal.setAttribute("data-playerid", playerid);
+                            divSlotReal.innerHTML = gerarHtmlCardMontado(j); 
+                            fcmSaveData.colados[playerid] = true; 
+                            coladas++;
+                        } 
+                        // 🔴 CASO 2: A figurinha já está colada no álbum. Expurga o excesso direto para repetidas!
+                        else {
+                            fcmSaveData.repetidas.push(playerid);
+                        }
+                    } else { 
+                        novasRestantes.push(playerid); 
+                    }
                 });
-                fcmSaveData.disponiveis = novasRestantes; salvarProgressoAutomatico(); atualizarInterfaceCarteira(); vincularClickZoomSlotsColados();
-                if(coladas > 0) { gaveta.classList.remove('aberta'); alert(`Sucesso! ${coladas} cards colados.`); }
+
+                // Limpa completamente a aba de disponíveis (o que sobrou de fato vai para novasRestantes)
+                fcmSaveData.disponiveis = novasRestantes; 
+                salvarProgressoAutomatico(); 
+                atualizarInterfaceCarteira(); 
+                vincularClickZoomSlotsColados();
+                
+                gaveta.classList.remove('aberta');
+                if (coladas > 0) { 
+                    alert(`⚽ SUCESSO!\n\nVocê colou ${coladas} novas figurinhas no seu Álbum!\nOs cards duplicados restantes foram transferidos automaticamente para a sua aba de Repetidas!`); 
+                } else {
+                    alert(`🔄 ORGANIZAÇÃO CONCLUÍDA!\n\nTodos os cards da aba disponíveis já estavam colados e foram movidos para as suas Repetidas de troca!`);
+                }
             });
 
             document.getElementById('btn-export-save').addEventListener('click', () => {
