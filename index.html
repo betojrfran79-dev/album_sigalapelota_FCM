@@ -51,18 +51,30 @@
         .row-flex { display: flex; gap: 6%; justify-content: center; width: 100%; margin-bottom: 6%; }
         .slot { width: 23.5%; aspect-ratio: 3/4; border: 2px dashed rgba(255,0,60,0.4); display: flex; justify-content: center; align-items: center; color: #ff003c; font-size: 18px; font-weight: bold; border-radius: 6px; background: rgba(255,255,255,0.02); transition: all 0.3s; }
         
-        /* MONTAGEM EM CAMADAS DO CARD */
-        .fcm-card-wrapper { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; background-image: url('Modelo_Figurinha-limpa.png') !important; background-size: 100% 100% !important; background-repeat: no-repeat !important; }
+        /* 🚨 REVOLUÇÃO DE REDIMENSIONAMENTO DINÂMICO DO CARD (CONTAINER QUERIES) */
+        .fcm-card-wrapper { 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #000; 
+            background-image: url('Modelo_Figurinha-limpa.png') !important; 
+            background-size: 100% 100% !important; 
+            background-repeat: no-repeat !important;
+            container-type: inline-size; /* 🧠 Transforma o card em uma referência matemática de tamanho */
+        }
         .slot.card-instalado { border-style: solid; padding: 0; }
         .moldura-serie-a { border: 3.5px solid #FFD700; box-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
         .moldura-serie-b { border: 3px solid #C0C0C0; box-shadow: 0 0 10px rgba(192, 192, 192, 0.4); }
         .tg-miniface { position: absolute; width: 72%; height: 55%; top: 18%; left: 5%; object-fit: contain; object-position: bottom; z-index: 2; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)); }
         .tg-mini-escudo { position: absolute; width: 22%; height: 22%; top: 5%; left: 6%; object-fit: contain; z-index: 3; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
-        .tg-vertical-team { position: absolute; right: 4%; top: 46%; height: 32%; width: 20%; z-index: 4; writing-mode: vertical-rl; transform: rotate(180deg); display: flex; justify-content: center; align-items: center; color: #4da6ff; font-family: 'Outfit', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; white-space: nowrap; text-shadow: 0 0 4px rgba(77,166,255,0.5); }
+        
+        /* 📏 Fontes fluidas que encolhem e crescem de acordo com a largura do card (using cqw) */
+        .tg-vertical-team { position: absolute; right: 4%; top: 46%; height: 32%; width: 20%; z-index: 4; writing-mode: vertical-rl; transform: rotate(180deg); display: flex; justify-content: center; align-items: center; color: #4da6ff; font-family: 'Outfit', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; white-space: nowrap; text-shadow: 0 0 4px rgba(77,166,255,0.5); font-size: 7.5cqw; }
         .tg-info-block { position: absolute; bottom: 0; left: 0; width: 100%; height: 21%; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 1px; }
-        .tg-txt-name { font-family: 'Outfit', sans-serif; color: #fff; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; text-shadow: 0 1px 2px #000; }
-        .tg-txt-stats { font-family: 'Barlow Condensed', sans-serif; color: #FFD700; font-weight: 800; text-shadow: 0 1px 1px #000; }
-        .tg-txt-bio { font-family: 'Barlow Condensed', sans-serif; color: rgba(255,255,255,0.74); font-weight: 700; text-transform: uppercase; }
+        .tg-txt-name { font-family: 'Outfit', sans-serif; color: #fff; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; text-shadow: 0 1px 2px #000; font-size: 8.5cqw; }
+        .tg-txt-stats { font-family: 'Barlow Condensed', sans-serif; color: #FFD700; font-weight: 800; text-shadow: 0 1px 1px #000; font-size: 6cqw; margin-top: 1px; }
+        .tg-txt-bio { font-family: 'Barlow Condensed', sans-serif; color: rgba(255,255,255,0.74); font-weight: 700; text-transform: uppercase; font-size: 4.2cqw; margin-top: 1px; }
         
         /* GAVETA LATERAL */
         #gaveta-carteira { position: fixed; right: -420px; top: 0; width: 400px; height: 100vh; background: #0f0f12; border-left: 3px solid #ff003c; z-index: 10000; box-shadow: -10px 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 15px; }
@@ -284,7 +296,7 @@
         }
 
         // =====================================================================
-        // ANCORAGEM GLOBAL ABSOLUTA 2: INTEGRIDADE DE SCRIPT E ENGENHARIA DE APOIO
+        // ANCORAGEM GLOBAL ABSOLUTA 2: INTEGRIDADE DE SCRIPT E VARIABLES
         // =====================================================================
         let figurinhaIdGlobal = 1; 
         const mapeamentoSlots = {}; 
@@ -601,7 +613,7 @@
             };
 
             // =====================================================================
-            // ENGINE DE MATCH AUTOMÁTICO CRUZADO P2P PURE LOCAL
+            // ENGINE DE MATCH AUTOMÁTICO CRUZADO P2P 
             // =====================================================================
             document.getElementById('btn-criar-proposta').addEventListener('click', () => {
                 let faltantesIds = [];
