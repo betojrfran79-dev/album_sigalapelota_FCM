@@ -51,7 +51,7 @@
         .row-flex { display: flex; gap: 6%; justify-content: center; width: 100%; margin-bottom: 6%; }
         .slot { width: 23.5%; aspect-ratio: 3/4; border: 2px dashed rgba(255,0,60,0.4); display: flex; justify-content: center; align-items: center; color: #ff003c; font-size: 18px; font-weight: bold; border-radius: 6px; background: rgba(255,255,255,0.02); transition: all 0.3s; }
         
-        /* REDIMENSIONAMENTO DINÂMICO DO CARD (CONTAINER QUERIES) */
+        /* CONTAINER QUERIES - FIGURINHAS AUTO-ADAPTÁVEIS */
         .fcm-card-wrapper { 
             position: relative; 
             width: 100%; 
@@ -69,10 +69,7 @@
         .tg-miniface { position: absolute; width: 72%; height: 55%; top: 18%; left: 5%; object-fit: contain; object-position: bottom; z-index: 2; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)); }
         .tg-mini-escudo { position: absolute; width: 22%; height: 22%; top: 5%; left: 6%; object-fit: contain; z-index: 3; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
         
-        /* Fontes fluidas que encolhem e crescem de acordo com o tamanho do wrapper */
         .tg-vertical-team { position: absolute; right: 4%; top: 46%; height: 32%; width: 20%; z-index: 4; writing-mode: vertical-rl; transform: rotate(180deg); display: flex; justify-content: center; align-items: center; color: #4da6ff; font-family: 'Outfit', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; white-space: nowrap; text-shadow: 0 0 4px rgba(77,166,255,0.5); font-size: 7.5cqw; }
-        
-        /* 🛠️ REMEDIAÇÃO DO CORTE NO ZOOM COMPENSADO POR DISTRIBUIÇÃO ABSOLUTA REAJUSTADA */
         .tg-info-block { position: absolute; bottom: 1.5%; left: 0; width: 100%; height: 21%; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0 2px; }
         .tg-txt-name { font-family: 'Outfit', sans-serif; color: #fff; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; text-shadow: 0 1px 2px #000; font-size: 8.5cqw; }
         .tg-txt-stats { font-family: 'Barlow Condensed', sans-serif; color: #FFD700; font-weight: 800; text-shadow: 0 1px 1px #000; font-size: 6cqw; margin-top: 1px; }
@@ -113,7 +110,7 @@
         .quiz-opcao-btn.selecionada { background: #ff003c; color: white; border-color: #ff003c; font-weight: bold; }
         #btn-quiz-acao-proximo { background: #00c853; color: white; border: none; padding: 6px; font-weight: bold; border-radius: 4px; text-transform: uppercase; font-size: 10px; cursor: pointer; }
 
-        .box-resgate-codigo { background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .box-resgate-codigo { background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
         .box-resgate-codigo label { color: #aaa; font-size: 10px; font-weight: bold; text-transform: uppercase; }
         .row-resgate { display: flex; gap: 8px; }
         #input-codigo-fcm { flex: 1; background: #000; border: 1px solid #444; border-radius: 4px; color: #fff; padding: 5px 8px; font-family: monospace; font-size: 11px; text-transform: uppercase; }
@@ -245,8 +242,35 @@
     
     <script>
         // =====================================================================
-        // ANCORAGEM GLOBAL ABSOLUTA 1: BASE DE CLUBES E DADOS MESTRE
+        // 🔒 BLOCO ÚNICO DE PRECEDÊNCIA ABSOLUTA: CONFIGURAÇÃO DO ENGINE E DADOS
         // =====================================================================
+        let figurinhaIdGlobal = 1; 
+        const mapeamentoSlots = {}; 
+        const bancoMestreJogadores = {}; 
+        let pageFlip = null; 
+        let paginaSerieA = 1; 
+        let abaAtiva = "disponiveis";
+        
+        const poolNormais = []; 
+        const poolMedios = []; 
+        const poolRaros = [];
+
+        let perguntasSorteadasLote = [];
+        let indicePerguntaAtual = 0;
+        let acertosComputados = 0;
+        let opcaoSelecionadaTemporaria = null;
+
+        let fcmSaveData = {
+            tickets: 5,
+            pacotes: 5,
+            disponiveis: [],
+            repetidas: [],
+            colados: {},
+            codigosUsados: [],
+            historicoSavesProcessados: [],
+            ultimoQuizRespondido: ""
+        };
+
         const clubes = [
             { nome: "Athletico-PR", div: "Brasileirão", fundacao: "26/03/1924", img: "Athletico-PR.png", hist: "Bicampeão da Sul-Americana." },
             { nome: "Atlético-MG", div: "Brasileirão", fundacao: "25/03/1908", img: "Atlético-MG.png", hist: "Campeão da Libertadores." },
@@ -296,36 +320,6 @@
             return alvo ? alvo.img : "";
         }
 
-        // =====================================================================
-        // ANCORAGEM GLOBAL ABSOLUTA 2: INTEGRIDADE DE VARIABLES E ARRAYS
-        // =====================================================================
-        let figurinhaIdGlobal = 1; 
-        const mapeamentoSlots = {}; 
-        const bancoMestreJogadores = {}; 
-        let pageFlip = null; 
-        let paginaSerieA = 1; 
-        let abaAtiva = "disponiveis";
-        
-        const poolNormais = []; 
-        const poolMedios = []; 
-        const poolRaros = [];
-
-        let perguntasSorteadasLote = [];
-        let indicePerguntaAtual = 0;
-        let acertosComputados = 0;
-        let opcaoSelecionadaTemporaria = null;
-
-        let fcmSaveData = {
-            tickets: 5,
-            pacotes: 5,
-            disponiveis: [],
-            repetidas: [],
-            colados: {},
-            codigosUsados: [],
-            historicoSavesProcessados: [],
-            ultimoQuizRespondido: ""
-        };
-
         function verificarAssinaturaCupom(textoInvisivel, hashInformado) {
             let textoTratado = textoInvisivel.toLowerCase().trim();
             let somaToken = 0;
@@ -336,23 +330,35 @@
             return hashCalculado === hashInformado;
         }
 
+        function gerarHtmlCardMontado(j) {
+            return `
+            <div class="fcm-card-wrapper">
+                <img src="minifaces/p${j.id}.png" class="tg-miniface" onerror="this.alt='FOTO';">
+                <img src="escudos/${j.clubeImg}" class="tg-mini-escudo">
+                <div class="tg-vertical-team">${j.clubeNome}</div>
+                <div class="tg-info-block">
+                    <div class="tg-txt-name">${j.nome}</div>
+                    <div class="tg-txt-stats">${j.pac} PAC &nbsp;${j.sho} SHO &nbsp;${j.pas} PAS &nbsp;${j.dri} DRI &nbsp;${j.def} DEF &nbsp;${j.phy} PHY</div>
+                    <div class="tg-txt-bio">ALT: ${j.height} | NASC: ${j.birthdate} | PESO: ${j.weight}</div>
+                </div>
+            </div>`;
+        }
+
         function salvarProgressoAutomatico() {
-            localStorage.setItem('fcm_album_savegame', JSON.stringify(fcmSaveData));
             document.getElementById('lbl-tickets-estoque').innerText = fcmSaveData.tickets;
             document.getElementById('lbl-pacotes-estoque').innerText = fcmSaveData.pacotes;
             document.getElementById('btn-abrir-pacote').disabled = (fcmSaveData.pacotes <= 0);
             document.getElementById('btn-gastar-ticket').disabled = (fcmSaveData.tickets <= 0);
+            localStorage.setItem('fcm_album_savegame', JSON.stringify(fcmSaveData));
         }
 
         const obterNumeroSlotPorId = (id) => {
             let idNum = parseInt(id);
             return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
         };
-    </script>
-    
-    <script>
+
         // =====================================================================
-        // ANCORAGEM GLOBAL ABSOLUTA 3: PROCESSAMENTO DO CORE DOM
+        // DOM CONTENT LOADED SEPARADO E INTEGRAL (PRESERVADO COM ESCOPO TOTAL)
         // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const albumElement = document.getElementById('album');
@@ -598,7 +604,7 @@
             };
 
             // =====================================================================
-            // ENGINE DE MATCH COERENTE COM TRANSPARÊNCIA COMPLETA DE ENTRADA/SAÍDA
+            // ENGINE DE MATCH AUTOMÁTICO CRUZADO COM TRANSPARÊNCIA HOMOLOGADA
             // =====================================================================
             document.getElementById('btn-criar-proposta').addEventListener('click', () => {
                 let faltantesIds = [];
@@ -664,7 +670,6 @@
                             let loteEfetivoDar = darParaProponente.slice(0, totalParesTrocaveis);
                             let loteEfetivoReceber = receberDoProponente.slice(0, totalParesTrocaveis);
 
-                            // 📝 CONSTRUÇÃO DO MAPA VISUAL DO RECIBO DE CONFERÊNCIA
                             let textoListaSaindo = "";
                             loteEfetivoDar.forEach(id => {
                                 let j = bancoMestreJogadores[id];
@@ -707,7 +712,7 @@
                             dlAnchorElem.setAttribute("download", `match_finalizado_comunidade.json`);
                             dlAnchorElem.click();
 
-                            alert("✅ Lote assinado pelo sistema! Entregue o novo arquivo gerado ao seu amigo para ele computar as cartas dele.");
+                            alert("✅ Lote assinado! Mande o arquivo de volta ao amigo para ele concluir a parte dele.");
 
                         } else if (contrato.tipo === "MATCH_CONCLUIDO") {
                             let robertoValido = true;
@@ -721,7 +726,6 @@
                                 return;
                             }
 
-                            // 📝 RECIBO DO PROPONENTE (ROBERTO) CONCLUÍDO
                             let textoRobertoRecebeu = "";
                             contrato.loteDarProponente.forEach(idStr => {
                                 let id = parseInt(idStr);
@@ -852,7 +856,6 @@
             
             document.getElementById('btn-inicio').addEventListener('click', () => { pageFlip.flip(0); });
             document.getElementById('btn-serie-a').addEventListener('click', () => { pageFlip.flip(paginaSerieA); });
-            document.getElementById('btn-fim').addEventListener('click', () => { pageFlip.flip(pageFlip.getPageCount() - 1); });
 
             salvarProgressoAutomatico(); atualizarInterfaceCarteira(); vincularClickZoomSlotsColados();
         });
