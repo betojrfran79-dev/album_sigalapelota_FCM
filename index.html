@@ -130,9 +130,12 @@
         .zoom-card-slot-tag { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.9); color: #ffffff; font-size: 15px; font-weight: 900; padding: 4px 16px; border-radius: 20px; border: 2px solid #ff003c; z-index: 999; letter-spacing: 1px; box-shadow: 0 0 15px rgba(255, 0, 60, 0.6); }
         
         #btn-colar-tudo { width: 100%; background: #00c853; color: white; border: none; padding: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 900; text-transform: uppercase; border-radius: 6px; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 12px rgba(0,200,83,0.3); }
-        #fcm-zoom-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.92); z-index: 20000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s ease; cursor: pointer; }
+        
+        /* 🗑️ CONTAINER DO ZOOM COM BOTÃO DE EXCLUSÃO INTERNO */
+        #fcm-zoom-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.92); z-index: 20000; display: none; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s ease; }
         #fcm-zoom-overlay.ativo { display: flex; opacity: 1; }
         .zoom-card-box { width: 440px; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; border: 4px solid #FFD700; box-shadow: 0 10px 40px rgba(255,215,0,0.5); position: relative; }
+        #btn-excluir-manual { margin-top: 20px; background: #ff003c; color: white; border: none; padding: 12px 35px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 900; text-transform: uppercase; border-radius: 6px; cursor: pointer; box-shadow: 0 5px 15px rgba(255,0,60,0.4); display: none; }
     </style>
 </head>
 <body>
@@ -194,13 +197,16 @@
         </div>
 
         <div class="backup-area" style="flex-shrink: 0;">
-            <button class="btn-backup" id="btn-export-save">💾 Salvar Save</button>
-            <button class="btn-backup" id="btn-import-save">📂 Ler Save</button>
+            <button class="btn-backup" id="btn-export-save">💾 Salvar</button>
+            <button class="btn-backup" id="btn-import-save">📂 Importar</button>
             <input type="file" id="file-uploader-save" style="display: none;" accept=".fcm">
         </div>
     </div>
 
-    <div id="fcm-zoom-overlay"><div class="zoom-card-box" id="zoom-content-target"></div></div>
+    <div id="fcm-zoom-overlay">
+        <div class="zoom-card-box" id="zoom-content-target"></div>
+        <button id="btn-excluir-manual">🗑️ Excluir esta Figurinha</button>
+    </div>
 
     <div id="nav-album">
         <button class="nav-btn" id="btn-inicio">Capa</button>
@@ -243,7 +249,7 @@
     
     <script>
         // =====================================================================
-        // 🔒 BLOCO 1: ESCOPO DE SEGURANÇA MESTRE COM PRECEDÊNCIA TOTAL DO TOPO
+        // 🔒 CONFIGURAÇÃO DO ENGINE E DATA CORE
         // =====================================================================
         let figurinhaIdGlobal = 1; 
         const mapeamentoSlots = {}; 
@@ -252,6 +258,7 @@
         let paginaSerieA = 1; 
         let paginaSerieB = 41; 
         let abaAtiva = "disponiveis";
+        let cardSelecionadoParaExcluir = null; // 🧠 Monitora qual card está em foco no Zoom
         
         const poolNormais = []; 
         const poolMedios = []; 
@@ -317,50 +324,16 @@
             { nome: "Vila Nova-GO", div: "Série B", fundacao: "29/07/1943", img: "Vila Nova-GO.png", hist: "Uma das torcidas mais fanáticas." }
         ];
 
-        function acharEscudoTratado(nomeTime) {
-            let alvo = clubes.find(c => c.nome.toLowerCase().trim() === nomeTime.toLowerCase().trim());
-            return alvo ? alvo.img : "";
+        function itemDeletarPorId(array, id) {
+            let index = array.indexOf(id);
+            if (index > -1) { array.splice(index, 1); return true; }
+            return false;
         }
-
-        function verificarAssinaturaCupom(textoInvisivel, hashInformado) {
-            let textoTratado = textoInvisivel.toLowerCase().trim();
-            let somaToken = 0;
-            for (let i = 0; i < textoTratado.length; i++) {
-                somaToken += textoTratado.charCodeAt(i) * (i + 1);
-            }
-            let hashCalculado = String((somaToken * 37) % 8999 + 1000);
-            return hashCalculado === hashInformado;
-        }
-
-        function gerarHtmlCardMontado(j) {
-            return `
-            <div class="fcm-card-wrapper">
-                <img src="minifaces/p${j.id}.png" class="tg-miniface" onerror="this.alt='FOTO';">
-                <img src="escudos/${j.clubeImg}" class="tg-mini-escudo">
-                <div class="tg-vertical-team">${j.clubeNome}</div>
-                <div class="tg-info-block">
-                    <div class="tg-txt-name">${j.nome}</div>
-                    <div class="tg-txt-stats">${j.pac} PAC &nbsp;${j.sho} SHO &nbsp;${j.pas} PAS &nbsp;${j.dri} DRI &nbsp;${j.def} DEF &nbsp;${j.phy} PHY</div>
-                    <div class="tg-txt-bio">ALT: ${j.height} | NASC: ${j.birthdate} | PESO: ${j.weight}</div>
-                </div>
-            </div>`;
-        }
-
-        function salvarProgressoAutomatico() {
-            document.getElementById('lbl-tickets-estoque').innerText = fcmSaveData.tickets;
-            document.getElementById('lbl-pacotes-estoque').innerText = fcmSaveData.pacotes;
-            document.getElementById('btn-abrir-pacote').disabled = (fcmSaveData.pacotes <= 0);
-            document.getElementById('btn-gastar-ticket').disabled = (fcmSaveData.tickets <= 0);
-            localStorage.setItem('fcm_album_savegame', JSON.stringify(fcmSaveData));
-        }
-
-        const obterNumeroSlotPorId = (id) => {
-            let idNum = parseInt(id);
-            return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
-        };
-
+    </script>
+    
+    <script>
         // =====================================================================
-        // 🔄 BLOCO 2: INICIALIZAÇÃO NATIVA E COMPILAÇÃO DAS PÁGINAS DO LIVRO
+        // DOM LOADED CORE ENGINE
         // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const albumElement = document.getElementById('album');
@@ -453,10 +426,15 @@
             const gaveta = document.getElementById('gaveta-carteira');
             const overlayZoom = document.getElementById('fcm-zoom-overlay');
             const targetZoom = document.getElementById('zoom-content-target');
+            const btnExcluirManual = document.getElementById('btn-excluir-manual');
 
             document.getElementById('btn-toggle-carteira').addEventListener('click', () => { gaveta.classList.toggle('aberta'); });
             document.getElementById('btn-fechar-gaveta').addEventListener('click', () => { gaveta.classList.remove('aberta'); });
-            overlayZoom.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('ativo'); });
+            
+            // 🧠 Fechamento inteligente do Zoom apenas se clicar fora do card ou no botão
+            overlayZoom.addEventListener('click', function(e) { 
+                if (e.target === this) { this.classList.remove('ativo'); cardSelecionadoParaExcluir = null; } 
+            });
 
             const atualizarInterfaceCarteira = () => {
                 let listaCarteiraElement = document.querySelector('.carteira-lista');
@@ -477,9 +455,7 @@
                 let contagem = {};
                 listaAlvo.forEach(id => {
                     let cleanId = parseInt(id);
-                    if(bancoMestreJogadores[cleanId]) {
-                        contagem[cleanId] = (contagem[cleanId] || 0) + 1;
-                    }
+                    if(bancoMestreJogadores[cleanId]) { contagem[cleanId] = (contagem[cleanId] || 0) + 1; }
                 });
 
                 let listaOrdenadaMatematica = Object.keys(contagem).map(idStr => {
@@ -502,20 +478,43 @@
                     }
                 });
 
+                // 🧠 GERENCIADOR DE GAVETA DE EXCLUSÃO MANUAL INTEGRADA NO ZOOM
                 document.querySelectorAll('.mini-card-container').forEach(el => {
                     el.onclick = function() {
-                        let pid = this.getAttribute('data-playerid');
+                        let pid = parseInt(this.getAttribute('data-playerid'));
                         let jogadorData = bancoMestreJogadores[pid];
                         if (jogadorData) {
+                            cardSelecionadoParaExcluir = { id: pid, origem: abaAtiva };
                             let numSlotExibicao = obterNumeroSlotPorId(pid);
                             targetZoom.innerHTML = `
                                 <div class="zoom-card-slot-tag">Nº ${numSlotExibicao}</div>
                                 ${gerarHtmlCardMontado(jogadorData)}
                             `;
+                            btnExcluirManual.style.display = "block"; // Ativa a lixeira
                             overlayZoom.classList.add('ativo');
                         }
                     };
                 });
+            };
+
+            // 🧠 MOTOR EXCLUSIVO DE DELEÇÃO MANUAL 1 POR 1
+            btnExcluirManual.onclick = function() {
+                if (!cardSelecionadoParaExcluir) return;
+                let idAlvo = cardSelecionadoParaExcluir.id;
+                let arrayAlvo = (cardSelecionadoParaExcluir.origem === "disponiveis") ? fcmSaveData.disponiveis : fcmSaveData.repetidas;
+                
+                let j = bancoMestreJogadores[idAlvo];
+                let confirmacao = confirm(`⚠️ EXCLUSÃO MANUAL\n\nDeseja remover 1 unidade da figurinha Nº ${obterNumeroSlotPorId(idAlvo)} - ${j.nome} da sua carteira?`);
+                if (!confirmacao) return;
+
+                let removido = itemDeletarPorId(arrayAlvo, idAlvo);
+                if (removido) {
+                    salvarProgressoAutomatico();
+                    atualizarInterfaceCarteira();
+                    overlayZoom.classList.remove('ativo');
+                    cardSelecionadoParaExcluir = null;
+                    alert("🗑️ Card removido com sucesso!");
+                }
             };
 
             const renderizarEstruturaQuizDoDia = () => {
@@ -605,13 +604,14 @@
                                 <div class="zoom-card-slot-tag">Nº ${numSlotExibicao}</div>
                                 ${gerarHtmlCardMontado(jogadorData)}
                             `;
+                            btnExcluirManual.style.display = "none"; // Álbum colado não deixa excluir
                             overlayZoom.classList.add('ativo');
                         }
                     };
                 });
             };
 
-            // ENGINE DE MATCH REVISADO E SANITIZADO CONTRA DUPLICATAS FALSAS
+            // MATCH AUTO
             document.getElementById('btn-criar-proposta').addEventListener('click', () => {
                 let faltantesIds = [];
                 Object.keys(bancoMestreJogadores).forEach(idStr => {
@@ -619,10 +619,7 @@
                     if (!fcmSaveData.colados[idNum]) faltantesIds.push(idNum);
                 });
 
-                // Sanitiza rigorosamente o array de repetidas exportado
-                let repetidasLimpias = fcmSaveData.repetidas
-                    .map(id => parseInt(id))
-                    .filter(id => !isNaN(id) && bancoMestreJogadores[id]);
+                let repetidasLimpias = fcmSaveData.repetidas.map(id => parseInt(id)).filter(id => !isNaN(id) && bancoMestreJogadores[id]);
 
                 let contratoLote = {
                     tipo: "PROPOSTA_AUTOMATICA_LOTE",
@@ -648,11 +645,7 @@
                 reader.onload = function(event) {
                     try {
                         let contrato = JSON.parse(event.target.result);
-                        
-                        // Filtra o estoque local do recebedor contra dados corrompidos
-                        let minhasRepetidasLimpias = fcmSaveData.repetidas
-                            .map(id => parseInt(id))
-                            .filter(id => !isNaN(id) && bancoMestreJogadores[id]);
+                        let minhasRepetidasLimpias = fcmSaveData.repetidas.map(id => parseInt(id)).filter(id => !isNaN(id) && bancoMestreJogadores[id]);
 
                         if (contrato.tipo === "PROPOSTA_AUTOMATICA_LOTE") {
                             let faltantesAmigo = [];
@@ -670,13 +663,13 @@
                             let receberDoProponente = [];
                             contrato.repetidasProponente.forEach(idStr => {
                                 let id = parseInt(idStr);
-                                if (faltantesAmigo.includes(id) && contrato.repetidasProponente.includes(id)) receberDoProponente.push(id);
+                                if (faltantesAmigo.includes(id)) receberDoProponente.push(id);
                             });
 
                             let totalParesTrocaveis = Math.min(darParaProponente.length, receberDoProponente.length);
 
                             if (totalParesTrocaveis === 0) {
-                                alert("⚽ O Match analisou os dois álbuns mas não encontrou nenhuma combinação correspondente com cartas reais nas repetidas!");
+                                alert("⚽ O Match analisou os dois álbuns mas não encontrou nenhuma combinação correspondente!");
                                 return;
                             }
 
@@ -728,7 +721,6 @@
                             alert("✅ Lote assinado! Mande o arquivo de volta ao amigo para ele concluir a parte dele.");
 
                         } else if (contrato.tipo === "MATCH_CONCLUIDO") {
-                            // Sanitiza a verificação final na máquina do proponente
                             let meuEstoqueLimpo = fcmSaveData.repetidas.map(x => parseInt(x));
                             let robertoValido = true;
                             
@@ -738,7 +730,7 @@
                             });
 
                             if (!robertoValido) {
-                                alert("❌ Erro de integridade: As repetidas registradas no contrato não batem com o seu estoque real atual! Certifique-se de usar abas separadas em modo anônimo.");
+                                alert("❌ Erro de integridade: As repetidas não batem!");
                                 return;
                             }
 
@@ -800,7 +792,7 @@
                 if (partes.length === 5 && partes[0] === "FCM26" && partes[1] === "SLP") {
                     if (verificarAssinaturaCupom(partes[2] + partes[3], partes[4])) {
                         let creditosGanhos = parseInt(partes[3]) - 17;
-                        if (creditosGonzos > 0) {
+                        if (creditosGanhos > 0) {
                             fcmSaveData.codigosUsados.push(cod); fcmSaveData.tickets += creditosGanhos; campo.value = "";
                             salvarProgressoAutomatico(); atualizarInterfaceCarteira(); alert(`🎟️ +${creditosGanhos} Tickets!`);
                         }
@@ -830,6 +822,9 @@
                 salvarProgressoAutomatico(); atualizarInterfaceCarteira(); gaveta.classList.add('aberta');
             });
 
+            // =====================================================================
+            // 🚨 ENGINE DE COLAGEM BLINDADA CONTRA DESVIOS DE INÉDITAS REVISADA
+            // =====================================================================
             document.getElementById('btn-colar-tudo').addEventListener('click', () => {
                 let disponiveis = fcmSaveData.disponiveis; 
                 let coladas = 0; 
@@ -841,15 +836,18 @@
                     if (infoSlot) {
                         let divSlotReal = document.getElementById(`slot-album-${infoSlot.numSlot}`);
                         
-                        if (divSlotReal && !divSlotReal.classList.contains('card-instalado') && !fcmSaveData.colados[playerid]) {
+                        // 🧠 CORREÇÃO CRÍTICA: Olha primeiro se a vaga física do HTML está vazia!
+                        if (divSlotReal && !divSlotReal.classList.contains('card-instalado')) {
                             let classeMoldura = (infoSlot.divisao === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
                             let j = bancoMestreJogadores[playerid];
                             divSlotReal.className = `slot card-instalado ${classeMoldura}`; 
                             divSlotReal.setAttribute("data-playerid", playerid);
                             divSlotReal.innerHTML = generarHtmlCardMontado(j); 
+                            
                             fcmSaveData.colados[playerid] = true; 
                             coladas++;
                         } 
+                        // 🔴 Se a vaga na página física já está ocupada, aí sim é uma repetida de verdade!
                         else {
                             fcmSaveData.repetidas.push(playerid);
                         }
