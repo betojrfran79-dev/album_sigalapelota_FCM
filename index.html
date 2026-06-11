@@ -131,7 +131,7 @@
         
         #btn-colar-tudo { width: 100%; background: #00c853; color: white; border: none; padding: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 900; text-transform: uppercase; border-radius: 6px; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 12px rgba(0,200,83,0.3); }
         
-        /* 🗑️ CONTAINER DO ZOOM COM BOTÃO DE EXCLUSÃO INTERNO */
+        /* OVERLAY ZOOM COM BOTÃO DE EXCLUSÃO */
         #fcm-zoom-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.92); z-index: 20000; display: none; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s ease; }
         #fcm-zoom-overlay.ativo { display: flex; opacity: 1; }
         .zoom-card-box { width: 440px; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; border: 4px solid #FFD700; box-shadow: 0 10px 40px rgba(255,215,0,0.5); position: relative; }
@@ -249,7 +249,7 @@
     
     <script>
         // =====================================================================
-        // 🔒 CONFIGURAÇÃO DO ENGINE E DATA CORE
+        // 🔒 GLOBAL BLINDADA 1: VARIÁVEIS, OBJETOS E ARRAYS DE BASE
         // =====================================================================
         let figurinhaIdGlobal = 1; 
         const mapeamentoSlots = {}; 
@@ -258,7 +258,7 @@
         let paginaSerieA = 1; 
         let paginaSerieB = 41; 
         let abaAtiva = "disponiveis";
-        let cardSelecionadoParaExcluir = null; // 🧠 Monitora qual card está em foco no Zoom
+        let cardSelecionadoParaExcluir = null; 
         
         const poolNormais = []; 
         const poolMedios = []; 
@@ -324,16 +324,56 @@
             { nome: "Vila Nova-GO", div: "Série B", fundacao: "29/07/1943", img: "Vila Nova-GO.png", hist: "Uma das torcidas mais fanáticas." }
         ];
 
+        function acharEscudoTratado(nomeTime) {
+            let alvo = clubes.find(c => c.nome.toLowerCase().trim() === nomeTime.toLowerCase().trim());
+            return alvo ? alvo.img : "";
+        }
+
+        function verificarAssinaturaCupom(textoInvisivel, hashInformado) {
+            let textoTratado = textoInvisivel.toLowerCase().trim();
+            let somaToken = 0;
+            for (let i = 0; i < textoTratado.length; i++) {
+                somaToken += textoTratado.charCodeAt(i) * (i + 1);
+            }
+            let hashCalculado = String((somaToken * 37) % 8999 + 1000);
+            return hashCalculado === hashInformado;
+        }
+
+        function gerarHtmlCardMontado(j) {
+            return `
+            <div class="fcm-card-wrapper">
+                <img src="minifaces/p${j.id}.png" class="tg-miniface" onerror="this.alt='FOTO';">
+                <img src="escudos/${j.clubeImg}" class="tg-mini-escudo">
+                <div class="tg-vertical-team">${j.clubeNome}</div>
+                <div class="tg-info-block">
+                    <div class="tg-txt-name">${j.nome}</div>
+                    <div class="tg-txt-stats">${j.pac} PAC &nbsp;${j.sho} SHO &nbsp;${j.pas} PAS &nbsp;${j.dri} DRI &nbsp;${j.def} DEF &nbsp;${j.phy} PHY</div>
+                    <div class="tg-txt-bio">ALT: ${j.height} | NASC: ${j.birthdate} | PESO: ${j.weight}</div>
+                </div>
+            </div>`;
+        }
+
+        function salvarProgressoAutomatico() {
+            document.getElementById('lbl-tickets-estoque').innerText = fcmSaveData.tickets;
+            document.getElementById('lbl-pacotes-estoque').innerText = fcmSaveData.pacotes;
+            document.getElementById('btn-abrir-pacote').disabled = (fcmSaveData.pacotes <= 0);
+            document.getElementById('btn-gastar-ticket').disabled = (fcmSaveData.tickets <= 0);
+            localStorage.setItem('fcm_album_savegame', JSON.stringify(fcmSaveData));
+        }
+
+        const obterNumeroSlotPorId = (id) => {
+            let idNum = parseInt(id);
+            return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
+        };
+
         function itemDeletarPorId(array, id) {
             let index = array.indexOf(id);
             if (index > -1) { array.splice(index, 1); return true; }
             return false;
         }
-    </script>
-    
-    <script>
+
         // =====================================================================
-        // DOM LOADED CORE ENGINE
+        // 🔄 GLOBAL BLINDADA 2: INICIALIZAÇÃO DO DOM E RECONSTRUTOR DO PAGEFLIP
         // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const albumElement = document.getElementById('album');
@@ -430,8 +470,6 @@
 
             document.getElementById('btn-toggle-carteira').addEventListener('click', () => { gaveta.classList.toggle('aberta'); });
             document.getElementById('btn-fechar-gaveta').addEventListener('click', () => { gaveta.classList.remove('aberta'); });
-            
-            // 🧠 Fechamento inteligente do Zoom apenas se clicar fora do card ou no botão
             overlayZoom.addEventListener('click', function(e) { 
                 if (e.target === this) { this.classList.remove('ativo'); cardSelecionadoParaExcluir = null; } 
             });
@@ -478,7 +516,6 @@
                     }
                 });
 
-                // 🧠 GERENCIADOR DE GAVETA DE EXCLUSÃO MANUAL INTEGRADA NO ZOOM
                 document.querySelectorAll('.mini-card-container').forEach(el => {
                     el.onclick = function() {
                         let pid = parseInt(this.getAttribute('data-playerid'));
@@ -490,14 +527,13 @@
                                 <div class="zoom-card-slot-tag">Nº ${numSlotExibicao}</div>
                                 ${gerarHtmlCardMontado(jogadorData)}
                             `;
-                            btnExcluirManual.style.display = "block"; // Ativa a lixeira
+                            btnExcluirManual.style.display = "block"; 
                             overlayZoom.classList.add('ativo');
                         }
                     };
                 });
             };
 
-            // 🧠 MOTOR EXCLUSIVO DE DELEÇÃO MANUAL 1 POR 1
             btnExcluirManual.onclick = function() {
                 if (!cardSelecionadoParaExcluir) return;
                 let idAlvo = cardSelecionadoParaExcluir.id;
@@ -604,14 +640,14 @@
                                 <div class="zoom-card-slot-tag">Nº ${numSlotExibicao}</div>
                                 ${gerarHtmlCardMontado(jogadorData)}
                             `;
-                            btnExcluirManual.style.display = "none"; // Álbum colado não deixa excluir
+                            btnExcluirManual.style.display = "none"; 
                             overlayZoom.classList.add('ativo');
                         }
                     };
                 });
             };
 
-            // MATCH AUTO
+            // MATCH AUTO P2P
             document.getElementById('btn-criar-proposta').addEventListener('click', () => {
                 let faltantesIds = [];
                 Object.keys(bancoMestreJogadores).forEach(idStr => {
@@ -823,7 +859,7 @@
             });
 
             // =====================================================================
-            // 🚨 ENGINE DE COLAGEM BLINDADA CONTRA DESVIOS DE INÉDITAS REVISADA
+            // 🚨 ENGINE DE COLAGEM FÍSICA CORRIGIDA (CHECA O HTML PRIMEIRO)
             // =====================================================================
             document.getElementById('btn-colar-tudo').addEventListener('click', () => {
                 let disponiveis = fcmSaveData.disponiveis; 
@@ -836,7 +872,7 @@
                     if (infoSlot) {
                         let divSlotReal = document.getElementById(`slot-album-${infoSlot.numSlot}`);
                         
-                        // 🧠 CORREÇÃO CRÍTICA: Olha primeiro se a vaga física do HTML está vazia!
+                        // 🧠 CORREÇÃO CRÍTICA: Avalia o slot real na folha física!
                         if (divSlotReal && !divSlotReal.classList.contains('card-instalado')) {
                             let classeMoldura = (infoSlot.divisao === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
                             let j = bancoMestreJogadores[playerid];
@@ -847,7 +883,6 @@
                             fcmSaveData.colados[playerid] = true; 
                             coladas++;
                         } 
-                        // 🔴 Se a vaga na página física já está ocupada, aí sim é uma repetida de verdade!
                         else {
                             fcmSaveData.repetidas.push(playerid);
                         }
