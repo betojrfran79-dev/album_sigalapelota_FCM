@@ -93,7 +93,7 @@
         #btn-gastar-ticket { width: 100%; background: #ffab00; color: black; border: none; padding: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
         #btn-importar-carreira { width: 100%; background: #007bff; color: white; border: none; padding: 8px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 900; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
 
-        /* BANCA DE TROCAS */
+        /* BALCÃO DE TROCAS P2P ANTI-FRAUDE EM LOTE */
         .box-sistema-troca-lote { background: rgba(255,255,255,0.02); border: 1px solid #ffab00; border-radius: 6px; padding: 10px; display: none; flex-direction: column; gap: 8px; }
         .box-sistema-troca-lote label { color: #ffab00; font-size: 11px; font-weight: bold; text-transform: uppercase; }
         .row-inputs-troca { display: flex; gap: 6px; }
@@ -240,11 +240,11 @@
                     <input type="text" class="input-troca-txt" id="txt-card-eu-dou" placeholder="Nºs Minhas Repetidas (ex: 360,361)">
                     <input type="text" class="input-troca-txt" id="txt-card-eu-quero" placeholder="Nºs Cartas Amigo (ex: 105,220)">
                 </div>
-                <button class="btn-p2p-acao-reforçada" id="btn-gerar-token-saida">🔒 Gerar Código de Envio</button>
+                <button class="btn-p2p-acao-reforçada" id="btn-criar-proposta">🔒 Gerar Código de Envio</button>
                 
                 <div style="border-top: 1px solid #333; margin-top: 4px; padding-top: 4px;">
                     <input type="text" class="input-troca-txt" style="width:100%; margin-bottom:4px;" id="txt-token-parceiro-ler" placeholder="Cole o Código do Amigo aqui">
-                    <button class="btn-p2p-acao-reforçada" id="btn-processar-token-p2p">🔑 Processar Código</button>
+                    <button class="btn-p2p-acao-reforçada" id="btn-importar-proposta">🔑 Processar Código</button>
                 </div>
                 <input type="text" class="area-token-fcm" id="lbl-token-resultado" readonly placeholder="CÓDIGO GERADO APARECE AQUI" onclick="this.select(); document.execCommand('copy');">
             </div>
@@ -298,6 +298,24 @@
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <script src="perguntas.js"></script>
     <script src="jogadores.js"></script>
+    
+    <script>
+        // 🧠 SINCRO-BLINDAGEM: A função foi içada para a LINHA 1 do script para estar 100% disponível de imediato na inicialização do DOM
+        function gerarHtmlCardMontado(j) {
+            if (!j) return '';
+            return `
+            <div class="fcm-card-wrapper">
+                <img src="minifaces/p${j.id}.png" class="tg-miniface" onerror="this.alt='FOTO';">
+                <img src="escudos/${j.clubeImg}" class="tg-mini-escudo">
+                <div class="tg-vertical-team">${j.clubeNome}</div>
+                <div class="tg-info-block">
+                    <div class="tg-txt-name">${j.nome}</div>
+                    <div class="tg-txt-stats">${j.pac} PAC &nbsp;${j.sho} SHO &nbsp;${j.pas} PAS &nbsp;${j.dri} DRI &nbsp;${j.def} DEF &nbsp;${j.phy} PHY</div>
+                    <div class="tg-txt-bio">ALT: ${j.height} | NASC: ${j.birthdate} | PESO: ${j.weight}</div>
+                </div>
+            </div>`;
+        }
+    </script>
     
     <script>
         // =====================================================================
@@ -417,14 +435,6 @@
             let index = array.indexOf(id);
             if (index > -1) { array.splice(index, 1); return true; }
             return false;
-        }
-
-        function salvarProgressoAutomatico() {
-            document.getElementById('lbl-tickets-estoque').innerText = fcmSaveData.tickets;
-            document.getElementById('lbl-pacotes-estoque').innerText = fcmSaveData.pacotes;
-            document.getElementById('btn-abrir-pacote').disabled = (fcmSaveData.pacotes <= 0);
-            document.getElementById('btn-gastar-ticket').disabled = (fcmSaveData.tickets <= 0);
-            localStorage.setItem('fcm_album_savegame', JSON.stringify(fcmSaveData));
         }
 
         // =====================================================================
@@ -684,67 +694,23 @@
                 }
             };
 
-            document.getElementById('btn-gastar-ticket').addEventListener('click', () => {
-                if (fcmSaveData.tickets <= 0) return;
-                fcmSaveData.tickets--; fcmSaveData.pacotes++;
-                salvarProgressoAutomatico(); atualizarInterfaceCarteira();
-            });
-
-            document.getElementById('btn-importar-carreira').addEventListener('click', () => { document.getElementById('file-uploader-carreira').click(); });
-            document.getElementById('file-uploader-carreira').addEventListener('change', function(e) {
-                let arquivoEscolhido = e.target.files[0]; if (!arquivoEscolhido) return;
-                let assinaturaUnicaDoArquivo = `${arquivoEscolhido.name}_${arquivoEscolhido.size}_${arquivoEscolhido.lastModified}`;
-                if (fcmSaveData.historicoSavesProcessados.includes(assinaturaUnicaDoArquivo)) { alert("⚽ Seu progresso já está atualizado!"); return; }
-
-                let reader = new FileReader();
-                reader.onload = function(event) {
-                    let conteudoTexto = event.target.result;
-                    if (!conteudoTexto.includes("FBCHUNKS") && !conteudoTexto.includes("SaveType_Career")) { alert("❌ Arquivo inválido!"); return; }
-                    let creditosGanhos = Math.floor(Math.random() * 3) + 2; 
-                    fcmSaveData.historicoSavesProcessados.push(assinaturaUnicaDoArquivo);
-                    fcmSaveData.tickets += creditosGanhos; salvarProgressoAutomatico(); atualizarInterfaceCarteira();
-                    alert("🎮 PROGRESSO EXTRAÍDO! +" + creditosGanhos + " Tickets!");
-                };
-                reader.readAsText(arquivoEscolhido, "ISO-8859-1");
-            });
-
-            document.getElementById('btn-validar-codigo').addEventListener('click', function() {
-                let campo = document.getElementById('input-codigo-fcm'); let cod = campo.value.trim().toUpperCase(); if (!cod) return;
-                if (cod === "TESTE100") { fcmSaveData.tickets += 1; campo.value = ""; salvarProgressoAutomatico(); atualizarInterfaceCarteira(); alert("🎟️ Teste Ativo!"); return; }
-                if (fcmSaveData.codigosUsados.includes(cod)) { alert("Cupom já utilizado!"); return; }
-                let partes = cod.split("-");
-                if (partes.length === 5 && partes[0] === "FCM26" && partes[1] === "SLP") {
-                    if (verificarAssinaturaCupom(partes[2] + partes[3], partes[4])) {
-                        let creditosGanhos = parseInt(partes[3]) - 17;
-                        if (creditosGanhos > 0) {
-                            fcmSaveData.codigosUsados.push(cod); fcmSaveData.tickets += creditosGanhos; campo.value = "";
-                            salvarProgressoAutomatico(); atualizarInterfaceCarteira(); alert(`🎟️ +${creditosGanhos} Tickets!`);
+            const vincularClickZoomSlotsColados = () => {
+                document.querySelectorAll('.slot.card-instalado').forEach(el => {
+                    el.onclick = function() {
+                        let pid = this.getAttribute('data-playerid');
+                        let jogadorData = bancoMestreJogadores[pid];
+                        if (jogadorData) {
+                            let numSlotExibicao = obterNumeroSlotPorId(pid);
+                            targetZoom.innerHTML = `
+                                <div class="zoom-card-slot-tag">Nº ${numSlotExibicao}</div>
+                                ${gerarHtmlCardMontado(jogadorData)}
+                            `;
+                            btnExcluirManual.style.display = "none"; 
+                            overlayZoom.classList.add('ativo');
                         }
-                    } else { alert("❌ Cupom inválido."); }
-                }
-            });
-
-            document.getElementById('btn-abrir-pacote').addEventListener('click', () => {
-                if(fcmSaveData.pacotes <= 0) return; fcmSaveData.pacotes--;
-                let poolTotalFallback = Object.keys(bancoMestreJogadores); let figurinhasSorteadas = [];
-                while(figurinhasSorteadas.length < 6) {
-                    let d = Math.floor(Math.random() * 100) + 1; let id = null;
-                    if (d <= 5 && poolRaros.length > 0) id = poolRaros[Math.floor(Math.random() * poolRaros.length)];
-                    else if (d <= 30 && poolMedios.length > 0) id = poolMedios[Math.floor(Math.random() * poolMedios.length)];
-                    else if (poolNormais.length > 0) id = poolNormais[Math.floor(Math.random() * poolNormais.length)];
-                    else id = poolTotalFallback[Math.floor(Math.random() * poolTotalFallback.length)];
-                    if (id && !figurinhasSorteadas.includes(id)) figurinhasSorteadas.push(id);
-                }
-                figurinhasSorteadas.forEach(id => {
-                    let parsedId = parseInt(id);
-                    if (fcmSaveData.colados[parsedId] || fcmSaveData.disponiveis.map(x=>parseInt(x)).includes(parsedId)) {
-                        fcmSaveData.repetidas.push(parsedId);
-                    } else {
-                        fcmSaveData.disponiveis.push(parsedId);
-                    }
+                    };
                 });
-                salvarProgressoAutomatico(); atualizarInterfaceCarteira(); gaveta.classList.add('aberta');
-            });
+            };
 
             // =====================================================================
             // 🤝 BALCÃO DE TROCAS P2P ANTI-FRAUDE EM LOTE (ORDENAÇÃO ABSOLUTA FIXADA)
@@ -756,7 +722,6 @@
                 let txtQuero = document.getElementById('txt-card-eu-quero')?.value || "";
 
                 if(!txtDou.trim() || !txtQuero.trim()) { 
-                    // Fallback para manter o comportamento padrão de exportação de save caso os novos campos estejam vazios
                     let faltantesIds = [];
                     Object.keys(bancoMestreJogadores).forEach(idStr => {
                         let idNum = parseInt(idStr);
@@ -831,7 +796,7 @@
                 let hashInformado = partes[4];
 
                 let hashCalculado = gerarHashTokenTrocaLote(strIdsA, strIdsB, "LOTE");
-                if(hashCalculated !== hashInformado) { alert("❌ FALHA DE INTEGRIDADE: Código inválido ou violado!"); return; }
+                if(hashCalculado !== hashInformado) { alert("❌ FALHA DE INTEGRIDADE: Código inválido ou violado!"); return; }
 
                 let idsA = strIdsA.split(',').map(x => parseInt(x)).filter(x => !isNaN(x));
                 let idsB = strIdsB.split(',').map(x => parseInt(x)).filter(x => !isNaN(x));
@@ -967,7 +932,7 @@
             });
 
             // =====================================================================
-            // 🚨 ENGINE DE COLAGEM FÍSICA CORRIGIDA (AGORA INTEGRADA E ADAPTADA)
+            // 🚨 ENGINE DE COLAGEM FÍSICA CORRIGIDA (GRAFIA RESTAURADA)
             // =====================================================================
             document.getElementById('btn-colar-tudo').addEventListener('click', () => {
                 let disponiveis = fcmSaveData.disponiveis; 
@@ -980,6 +945,7 @@
                     if (infoSlot) {
                         let divSlotReal = document.getElementById(`slot-album-${infoSlot.numSlot}`);
                         
+                        // 🧠 AVALIAÇÃO DO SLOT FÍSICO REAL DO ÁLBUM
                         if (divSlotReal && !divSlotReal.classList.contains('card-instalado')) {
                             let classeMoldura = (infoSlot.divisao === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
                             let j = bancoMestreJogadores[playerid];
