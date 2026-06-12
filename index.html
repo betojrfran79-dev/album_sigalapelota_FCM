@@ -136,76 +136,79 @@
         #fcm-zoom-overlay.ativo { display: flex; opacity: 1; }
         .zoom-card-box { width: 440px; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; border: 4px solid #FFD700; box-shadow: 0 10px 40px rgba(255,215,0,0.5); position: relative; }
         #btn-excluir-manual { margin-top: 20px; background: #ff003c; color: white; border: none; padding: 12px 35px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 900; text-transform: uppercase; border-radius: 6px; cursor: pointer; box-shadow: 0 5px 15px rgba(255,0,60,0.4); display: none; }
-    /* =====================================================================
-   📱 RESPONSIVIDADE EXCLUSIVA PARA CELULARES E TELAS PEQUENAS
-   ===================================================================== */
-@media (max-width: 768px) {
-    /* 1. Ajusta o container do álbum para não sumir na tela vertical */
-    #album-container {
-        width: 95vw;
-        height: 70vh;
-    }
 
-    /* 2. Reposiciona os botões fixos para a BASE da tela no celular, 
-          evitando que eles cubram o topo da carteira */
-    .top-controls {
-        top: auto;
-        bottom: 15px;
-        right: 50%;
-        transform: translateX(50%);
-        width: 90%;
-        justify-content: center;
-        gap: 6px;
-    }
+        /* =====================================================================
+        📱 RESPONSIVIDADE CORRIGIDA (SEM SOBREPOSIÇÃO MOBILE DO TOPO OU BASE)
+        ===================================================================== */
+        @media (max-width: 768px) {
+            #album-container {
+                width: 96vw;
+                height: 65vh;
+                margin-top: 65px;
+            }
 
-    /* 3. Reduz sutilmente o tamanho dos botões para caberem em qualquer celular */
-    .control-btn {
-        padding: 10px 14px;
-        font-size: 11px;
-        flex: 1;
-        text-align: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
+            /* Mantém botões fixados no TOPO em uma linha horizontal muito fina e elegante */
+            .top-controls {
+                top: 5px;
+                right: 0;
+                left: 0;
+                width: 100%;
+                display: flex;
+                justify-content: space-around;
+                padding: 0 8px;
+                box-sizing: border-box;
+            }
 
-    /* 4. Redimensiona a gaveta da carteira para ocupar quase toda a tela no mobile */
-    #gaveta-carteira {
-        width: 100vw;
-        right: -105vw;
-    }
+            .control-btn {
+                padding: 8px 6px;
+                font-size: 10px;
+                flex: 1;
+                margin: 0 2px;
+                text-align: center;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            }
 
-    /* 5. EMPURRA O TOPO DA CARTEIRA PARA BAIXO 
-          Garante que os contadores de Tickets e Pacotes fiquem 100% visíveis */
-    .carteira-topo-fixo {
-        padding-top: 10px;
-        gap: 12px;
-    }
+            #gaveta-carteira {
+                width: 100vw;
+                right: -105vw;
+                padding-bottom: 20px;
+            }
 
-    .carteira-header h2 {
-        font-size: 18px;
-    }
+            /* EMPURRA OS CONTADORES: Evita que os botões do topo fiquem na frente dos recursos */
+            .carteira-topo-fixo {
+                margin-top: 55px;
+                padding: 5px;
+                gap: 6px;
+            }
 
-    /* 6. Ajusta o grid de cartas da carteira para o celular não esmagar as fotos */
-    .carteira-lista {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-    }
-    
-    .mini-card-container {
-        height: 170px;
-    }
+            .carteira-header h2 {
+                font-size: 18px;
+            }
 
-    /* 7. Ajusta a navegação estrutural do rodapé para telas de toque */
-    #nav-album {
-        left: 50%;
-        bottom: 75px; /* Sobe um pouco para não bater com os botões de controle */
-        padding: 8px 15px;
-    }
-    
-    .nav-btn {
-        font-size: 12px;
-        padding: 4px 6px;
-    }
-}
+            .carteira-lista {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            
+            .mini-card-container {
+                height: 165px;
+            }
+
+            /* Afasta o menu de navegação de páginas da base para não cruzar elementos táteis */
+            #nav-album {
+                left: 50%;
+                bottom: 15px;
+                transform: translateX(-50%);
+                width: 92%;
+                padding: 8px 10px;
+                justify-content: space-around;
+            }
+            
+            .nav-btn {
+                font-size: 11px;
+                padding: 4px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -266,9 +269,9 @@
             <div style="padding-top:10px; flex-shrink: 0;"><button id="btn-colar-tudo">Colar no Álbum</button></div>
         </div>
 
-        <div class="backup-area" style="flex-shrink: 0;">
-            <button class="btn-backup" id="btn-export-save">💾 Salvar</button>
-            <button class="btn-backup" id="btn-import-save">📂 Importar</button>
+        <div class="backup-area" style="flex-shrink: 0; padding-top: 5px; display: flex; gap: 5px;">
+            <button class="btn-backup" id="btn-export-save" style="flex: 1; background: #222; color: #fff; border: 1px solid #444; padding: 6px; font-weight: bold; font-size: 11px; cursor: pointer; border-radius: 4px;">💾 Salvar</button>
+            <button class="btn-backup" id="btn-import-save" style="flex: 1; background: #222; color: #fff; border: 1px solid #444; padding: 6px; font-weight: bold; font-size: 11px; cursor: pointer; border-radius: 4px;">📂 Importar</button>
             <input type="file" id="file-uploader-save" style="display: none;" accept=".fcm">
         </div>
     </div>
@@ -410,6 +413,7 @@
         }
 
         function gerarHtmlCardMontado(j) {
+            if (!j) return '';
             return `
             <div class="fcm-card-wrapper">
                 <img src="minifaces/p${j.id}.png" class="tg-miniface" onerror="this.alt='FOTO';">
@@ -579,7 +583,7 @@
                         let miniCardHtml = `
                         <div class="mini-card-container" data-playerid="${item.id}">
                             <div class="mini-card-slot-tag">Nº ${item.slotStr}</div>
-                            ${item.qtd > 1 ? `<div class="mini-card-count">x${item.qtd}</div>` : ''}
+                            ${item.qtd > 1 ? `<div class="mini-card-count" style="position:absolute; right:5px; bottom:5px; background:rgba(0,0,0,0.8); color:#fff; padding:2px 6px; font-weight:bold; font-size:12px; border-radius:4px; z-index:10;">x${item.qtd}</div>` : ''}
                             ${gerarHtmlCardMontado(j)}
                         </div>`;
                         listaCarteiraElement.insertAdjacentHTML('beforeend', miniCardHtml);
@@ -876,7 +880,7 @@
             document.getElementById('file-uploader-carreira').addEventListener('change', function(e) {
                 let arquivoEscolhido = e.target.files[0]; if (!arquivoEscolhido) return;
                 let assinaturaUnicaDoArquivo = `${arquivoEscolhido.name}_${arquivoEscolhido.size}_${arquivoEscolhido.lastModified}`;
-                if (fcmSaveData.historicoSavesProcessados.includes(assinaturaUnicaDoArquivo)) { alert("⚽ Seu progresso já está atualizado!"); return; }
+                if (fcmSaveData.historicoSavesProcessados.includes(assinaturaUnicaDoArquivo)) { alert("⚽ Seu progresso já está updated!"); return; }
 
                 let reader = new FileReader();
                 reader.onload = function(event) {
@@ -942,7 +946,6 @@
                     if (infoSlot) {
                         let divSlotReal = document.getElementById(`slot-album-${infoSlot.numSlot}`);
                         
-                        // 🧠 CORREÇÃO CRÍTICA: Avalia o slot real na folha física!
                         if (divSlotReal && !divSlotReal.classList.contains('card-instalado')) {
                             let classeMoldura = (infoSlot.divisao === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
                             let j = bancoMestreJogadores[playerid];
