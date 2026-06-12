@@ -93,13 +93,15 @@
         #btn-gastar-ticket { width: 100%; background: #ffab00; color: black; border: none; padding: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
         #btn-importar-carreira { width: 100%; background: #007bff; color: white; border: none; padding: 8px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 900; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
 
-        /* BANCA DE TROCAS */
-        .box-sistema-troca-lote { background: rgba(255,255,255,0.02); border: 1px solid #ffab00; border-radius: 6px; padding: 10px; display: none; flex-direction: column; gap: 6px; }
+        /* BALCÃO DE TROCAS P2P ANTI-FRAUDE EM LOTE */
+        .box-sistema-troca-lote { background: rgba(255,255,255,0.02); border: 1px solid #ffab00; border-radius: 6px; padding: 10px; display: none; flex-direction: column; gap: 8px; }
         .box-sistema-troca-lote label { color: #ffab00; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-        .row-botoes-troca { display: flex; gap: 8px; }
-        .btn-lote-acao { flex: 1; border: none; padding: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; border-radius: 4px; cursor: pointer; color: white; }
-        #btn-criar-proposta { background: #ffaa00; color: black; }
-        #btn-importar-proposta { background: #007bff; }
+        .row-inputs-troca { display: flex; gap: 6px; }
+        .input-troca-txt { flex: 1; background: #000; border: 1px solid #444; border-radius: 4px; color: #fff; padding: 6px; font-size: 11px; text-align: center; }
+        .area-token-fcm { width: 100%; background: #000; border: 1px solid #ffab00; border-radius: 4px; color: #00c853; padding: 6px; font-family: monospace; font-size: 10px; text-transform: uppercase; text-align: center; margin-top: 4px; }
+        .btn-p2p-acao-reforçada { width: 100%; border: none; padding: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; border-radius: 4px; cursor: pointer; color: white; transition: 0.2s; }
+        #btn-gerar-token-saida { background: #ffaa00; color: black; }
+        #btn-processar-token-p2p { background: #007bff; }
 
         /* QUIZ DIÁRIO */
         .box-sistema-quiz { background: rgba(255,255,255,0.03); border: 1px solid #ff003c; border-radius: 6px; padding: 10px; display: none; flex-direction: column; gap: 6px; }
@@ -161,12 +163,18 @@
             <input type="file" id="file-uploader-carreira" style="display: none;">
 
             <div class="box-sistema-troca-lote" id="painel-busca-repetidas">
-                <label>🤝 Mesa de Troca Coerente P2P</label>
-                <div class="row-botoes-troca">
-                    <button class="btn-lote-acao" id="btn-criar-proposta">Exportar Minha Lista</button>
-                    <button class="btn-lote-acao" id="btn-importar-proposta">Ler Lista de Amigo</button>
-                    <input type="file" id="file-uploader-troca" style="display: none;" accept=".json">
+                <label>🤝 Balcão de Trocas FCM (Lote & Trava)</label>
+                <div class="row-inputs-troca">
+                    <input type="text" class="input-troca-txt" id="txt-card-eu-dou" placeholder="Nºs Minhas Repetidas (ex: 360,361)">
+                    <input type="text" class="input-troca-txt" id="txt-card-eu-quero" placeholder="Nºs Cartas Amigo (ex: 105,220)">
                 </div>
+                <button class="btn-p2p-acao-reforçada" id="btn-gerar-token-saida">🔒 Gerar Código de Envio</button>
+                
+                <div style="border-top: 1px solid #333; margin-top: 4px; padding-top: 4px;">
+                    <input type="text" class="input-troca-txt" style="width:100%; margin-bottom:4px;" id="txt-token-parceiro-ler" placeholder="Cole o Código do Amigo aqui">
+                    <button class="btn-p2p-acao-reforçada" id="btn-processar-token-p2p">🔑 Processar Código</button>
+                </div>
+                <input type="text" class="area-token-fcm" id="lbl-token-resultado" readonly placeholder="CÓDIGO GERADO APARECE AQUI" onclick="this.select(); document.execCommand('copy');">
             </div>
 
             <div class="box-sistema-quiz" id="painel-quiz-container">
@@ -339,6 +347,17 @@
             return hashCalculado === hashInformado;
         }
 
+        // Motor criptográfico unificado em string estruturada para assinar os tokens em lote
+        function gerarHashTokenTrocaLote(listaDarStr, listaQueroStr, salt) {
+            let stringBase = `${listaDarStr}-${listaQueroStr}-${salt}-SIGALAPELOTAFCM26`;
+            let hash = 0;
+            for (let i = 0; i < stringBase.length; i++) {
+                hash = (hash << 5) - hash + stringBase.charCodeAt(i);
+                hash |= 0;
+            }
+            return String(Math.abs(hash) % 899999 + 100000);
+        }
+
         function gerarHtmlCardMontado(j) {
             return `
             <div class="fcm-card-wrapper">
@@ -364,6 +383,12 @@
         const obterNumeroSlotPorId = (id) => {
             let idNum = parseInt(id);
             return mapeamentoSlots[idNum] ? mapeamentoSlots[idNum].numSlot : "???";
+        };
+
+        const obterIdJogadorPorNumeroSlot = (slotStr) => {
+            let slotPuro = String(slotStr).padStart(3, '0');
+            let encontrado = Object.keys(mapeamentoSlots).find(key => mapeamentoSlots[key].numSlot === slotPuro);
+            return encontrado ? parseInt(encontrado) : null;
         };
 
         function itemDeletarPorId(array, id) {
@@ -476,7 +501,7 @@
 
             const atualizarInterfaceCarteira = () => {
                 let listaCarteiraElement = document.querySelector('.carteira-lista');
-                listaCarteiraElement.innerHTML = "";
+                if (listaCarteiraElement) listaCarteiraElement.innerHTML = "";
                 
                 document.getElementById('painel-busca-repetidas').style.display = (abaAtiva === "repetidas") ? "flex" : "none";
                 document.getElementById('painel-quiz-container').style.display = (abaAtiva === "quiz") ? "flex" : "none";
@@ -486,7 +511,7 @@
                 let listaAlvo = (abaAtiva === "disponiveis") ? fcmSaveData.disponiveis : fcmSaveData.repetidas;
 
                 if(listaAlvo.length === 0) {
-                    listaCarteiraElement.innerHTML = `<div style="grid-column: span 2; color: #666; text-align: center; font-size: 13px; padding-top: 40px;">Aba Vazia.</div>`;
+                    if (listaCarteiraElement) listaCarteiraElement.innerHTML = `<div style="grid-column: span 2; color: #666; text-align: center; font-size: 13px; padding-top: 40px;">Aba Vazia.</div>`;
                     return;
                 }
 
@@ -505,7 +530,7 @@
 
                 listaOrdenadaMatematica.forEach(item => {
                     let j = bancoMestreJogadores[item.id];
-                    if(j) {
+                    if(j && listaCarteiraElement) {
                         let miniCardHtml = `
                         <div class="mini-card-container" data-playerid="${item.id}">
                             <div class="mini-card-slot-tag">Nº ${item.slotStr}</div>
@@ -647,153 +672,158 @@
                 });
             };
 
-            // MATCH AUTO P2P
-            document.getElementById('btn-criar-proposta').addEventListener('click', () => {
-                let faltantesIds = [];
-                Object.keys(bancoMestreJogadores).forEach(idStr => {
-                    let idNum = parseInt(idStr);
-                    if (!fcmSaveData.colados[idNum]) faltantesIds.push(idNum);
+            // =====================================================================
+            // 🤝 BALCÃO DE TROCAS P2P ANTI-FRAUDE EM LOTE (ORDENAÇÃO ABSOLUTA FIXADA)
+            // =====================================================================
+            
+            // PASSO 1: Colecionador A gera o token contendo o lote ordenado na largada
+            document.getElementById('btn-gerar-token-saida').addEventListener('click', () => {
+                let txtDou = document.getElementById('txt-card-eu-dou').value.trim();
+                let txtQuero = document.getElementById('txt-card-eu-quero').value.trim();
+
+                if(!txtDou || !txtQuero) { alert("Por favor, preencha os números das cartas separando-os por vírgula!"); return; }
+
+                let slotsDou = txtDou.split(',').map(x => x.trim().padStart(3, '0')).filter(x => x.length > 0);
+                let slotsQuero = txtQuero.split(',').map(x => x.trim().padStart(3, '0')).filter(x => x.length > 0);
+
+                if(slotsDou.length === 0 || slotsQuero.length === 0) { alert("Nenhum número de carta válido detectado!"); return; }
+
+                let idsDou = [];
+                let idsQuero = [];
+
+                for(let s of slotsDou) {
+                    let id = obterIdJogadorPorNumeroSlot(s);
+                    if(!id) { alert(`Figurinha Nº ${s} não foi localizada no banco de dados!`); return; }
+                    idsDou.push(id);
+                }
+                for(let s of slotsQuero) {
+                    let id = obterIdJogadorPorNumeroSlot(s);
+                    if(!id) { alert(`Figurinha Nº ${s} não foi localizada no banco de dados!`); return; }
+                    idsQuero.push(id);
+                }
+
+                let estoqueRepetidas = fcmSaveData.repetidas.map(x => parseInt(x));
+                for(let id of idsDou) {
+                    if(!estoqueRepetidas.includes(id)) {
+                        alert(`Você não possui a figurinha Nº ${obterNumeroSlotPorId(id)} (${bancoMestreJogadores[id].nome}) nas suas repetidas!`);
+                        return;
+                    }
+                }
+
+                // CUSTÓDIA LÓGICA LOCAL: Dá baixa imediata nas repetidas do Colecionador A
+                idsDou.forEach(id => {
+                    let idx = fcmSaveData.repetidas.indexOf(id);
+                    if(idx > -1) fcmSaveData.repetidas.splice(idx, 1);
                 });
 
-                let repetidasLimpias = fcmSaveData.repetidas.map(id => parseInt(id)).filter(id => !isNaN(id) && bancoMestreJogadores[id]);
+                // 🧠 SINCRO-BLINDAGEM CORRIGIDA: Ordena rigidamente de forma crescente antes de gerar o Token
+                let strIdsDou = [...idsDou].sort((a,b)=>a-b).join(',');
+                let strIdsQuero = [...idsQuero].sort((a,b)=>a-b).join(',');
 
-                let contratoLote = {
-                    tipo: "PROPOSTA_AUTOMATICA_LOTE",
-                    token_seguranca: "FCM26-MATCH-" + Math.floor(Math.random() * 900000 + 100000),
-                    repetidasProponente: repetidasLimpias,
-                    faltantesProponente: faltantesIds
-                };
+                let hashAssinatura = gerarHashTokenTrocaLote(strIdsDou, strIdsQuero, "LOTE");
+                let tokenFinal = `FCM-OUTLOTE-[${strIdsDou}]-[${strIdsQuero}]-${hashAssinatura}`;
 
-                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contratoLote));
-                let dlAnchorElem = document.createElement('a');
-                dlAnchorElem.setAttribute("href", dataStr);
-                dlAnchorElem.setAttribute("download", `proposta_match_fcm.json`);
-                dlAnchorElem.click();
+                document.getElementById('lbl-token-resultado').value = tokenFinal;
+                salvarProgressoAutomatico();
+                atualizarInterfaceCarteira();
 
-                alert("📦 Lista de Inventário exportada! Envie esse JSON para o seu amigo realizar o Match Cruzado.");
+                alert(`🔒 CÓDIGO EM LOTE GERADO!\n\nAs cartas oferecidas saíram das suas repetidas e estão sob custódia do Token. Envie o código verde para o seu amigo.`);
             });
 
-            document.getElementById('btn-importar-proposta').addEventListener('click', () => { document.getElementById('file-uploader-troca').click(); });
-            document.getElementById('file-uploader-troca').addEventListener('change', function(e) {
-                let file = e.target.files[0]; if (!file) return;
+            // PASSO 2: Processamento unificado blindado contra inversão de chaves e com ordenação fixa
+            document.getElementById('btn-processar-token-p2p').addEventListener('click', () => {
+                let tokenBruto = document.getElementById('txt-token-parceiro-ler').value.trim().toUpperCase();
+                if(!tokenBruto) { alert("Cole o código do seu parceiro antes de processar!"); return; }
 
-                let reader = new FileReader();
-                reader.onload = function(event) {
-                    try {
-                        let contrato = JSON.parse(event.target.result);
-                        let minhasRepetidasLimpias = fcmSaveData.repetidas.map(id => parseInt(id)).filter(id => !isNaN(id) && bancoMestreJogadores[id]);
+                let partes = tokenBruto.split("-");
+                if(partes.length !== 5 || partes[0] !== "FCM") { alert("Formato de código inválido!"); return; }
 
-                        if (contrato.tipo === "PROPOSTA_AUTOMATICA_LOTE") {
-                            let faltantesAmigo = [];
-                            Object.keys(bancoMestreJogadores).forEach(idStr => {
-                                let idNum = parseInt(idStr);
-                                if (!fcmSaveData.colados[idNum]) faltantesAmigo.push(idNum);
-                            });
+                let acao = partes[1]; // OUTLOTE ou INLOTE
+                let strIdsA = partes[2].replace(/[\[\]]/g, ""); 
+                let strIdsB = partes[3].replace(/[\[\]]/g, ""); 
+                let hashInformado = partes[4];
 
-                            let darParaProponente = [];
-                            contrato.faltantesProponente.forEach(idStr => {
-                                let id = parseInt(idStr);
-                                if (minhasRepetidasLimpias.includes(id)) darParaProponente.push(id);
-                            });
+                // 🧠 SINCRO-BLINDAGEM NO RECEBIMENTO: Os IDs precisam estar rigidamente ordenados para bater com a fórmula do Hash
+                let hashCalculado = gerarHashTokenTrocaLote(strIdsA, strIdsB, "LOTE");
+                if(hashCalculado !== hashInformado) { alert("❌ FALHA DE INTEGRIDADE: Código inválido ou violado!"); return; }
 
-                            let receberDoProponente = [];
-                            contrato.repetidasProponente.forEach(idStr => {
-                                let id = parseInt(idStr);
-                                if (faltantesAmigo.includes(id)) receberDoProponente.push(id);
-                            });
+                let idsA = strIdsA.split(',').map(x => parseInt(x)).filter(x => !isNaN(x));
+                let idsB = strIdsB.split(',').map(x => parseInt(x)).filter(x => !isNaN(x));
 
-                            let totalParesTrocaveis = Math.min(darParaProponente.length, receberDoProponente.length);
+                if(acao === "OUTLOTE") {
+                    let entradaTrava = prompt(`🤝 DESAFIO ANTIFRAUDE P2P\n\nSeu amigo enviou uma proposta em lote.\nPara validar a transação, digite os Números das figurinhas que VOCÊ combinou de enviar a ele (separe-os por vírgula):`);
+                    
+                    if(!entradaTrava) { alert("Operação cancelada pelo usuário."); return; }
 
-                            if (totalParesTrocaveis === 0) {
-                                alert("⚽ O Match analisou os dois álbuns mas não encontrou nenhuma combinação correspondente!");
-                                return;
-                            }
+                    let slotsDigitadosTrava = entradaTrava.split(',').map(x => x.trim().padStart(3, '0')).filter(x => x.length > 0);
+                    let idsDigitadosTrava = [];
 
-                            let loteEfetivoDar = darParaProponente.slice(0, totalParesTrocaveis);
-                            let loteEfetivoReceber = receberDoProponente.slice(0, totalParesTrocaveis);
+                    for(let s of slotsDigitadosTrava) {
+                        let id = obterIdJogadorPorNumeroSlot(s);
+                        if(!id) { alert(`Figurinha Nº ${s} digitada na trava não existe.`); return; }
+                        idsDigitadosTrava.push(id);
+                    }
 
-                            let textoListaSaindo = "";
-                            loteEfetivoDar.forEach(id => {
-                                let j = bancoMestreJogadores[id];
-                                textoListaSaindo += `• Nº ${obterNumeroSlotPorId(id)} - ${j.nome} (${j.clubeNome})\n`;
-                            });
+                    let ordenadoB = [...idsB].sort((a,b)=>a-b);
+                    let ordenadoDigitado = [...idsDigitadosTrava].sort((a,b)=>a-b);
 
-                            let textoListaEntrando = "";
-                            loteEfetivoReceber.forEach(id => {
-                                let j = bancoMestreJogadores[id];
-                                textoListaEntrando += `• Nº ${obterNumeroSlotPorId(id)} - ${j.nome} (${j.clubeNome})\n`;
-                            });
+                    if(ordenadoB.join(',') !== ordenadoDigitado.join(',')) {
+                        alert("❌ FRAUDE OU ERRO DETECTADO!\n\nOs números que você digitou não correspondem às cartas combinadas no contrato. A troca foi abortada.");
+                        return;
+                    }
 
-                            let msgRelatorio = `🧩 CONTRATO DE MATCH COERENTE\n\n` +
-                                               `O sistema cruzou os dados e gerou ${totalParesTrocaveis} trocas justas!\n\n` +
-                                               `📤 CARTAS QUE VOCÊ VAI ENVIAR:\n${textoListaSaindo}\n` +
-                                               `📥 CARTAS QUE VOCÊ VAI RECEBER:\n${textoListaEntrando}\n` +
-                                               `Deseja fechar e assinar essa troca definitiva?`;
+                    let estoqueRepetidasB = fcmSaveData.repetidas.map(x => parseInt(x));
+                    let copiaEstoque = [...estoqueRepetidasB];
+                    let possuiTudo = true;
 
-                            let confirmacao = confirm(msgRelatorio);
-                            if (!confirmacao) return;
+                    for(let id of idsB) {
+                        let idx = copiaEstoque.indexOf(id);
+                        if(idx > -1) { copiaEstoque.splice(idx, 1); } else { possuiTudo = false; }
+                    }
 
-                            loteEfetivoDar.forEach(id => {
-                                let idx = fcmSaveData.repetidas.map(x => parseInt(x)).indexOf(id);
-                                if (idx > -1) fcmSaveData.repetidas.splice(idx, 1);
-                            });
-                            loteEfetivoReceber.forEach(id => {
-                                fcmSaveData.disponiveis.push(id);
-                            });
+                    if(!possuiTudo) {
+                        alert("❌ OPERAÇÃO RECUSADA!\n\nVocê digitou os números certos, mas não possui essas figurinhas repetidas suficientes em seu inventário real.");
+                        return;
+                    }
 
-                            contrato.tipo = "MATCH_CONCLUIDO";
-                            contrato.loteDarProponente = loteEfetivoReceber;
-                            contrato.loteRemoverProponente = loteEfetivoDar;
+                    idsB.forEach(id => {
+                        let idx = fcmSaveData.repetidas.indexOf(id);
+                        if(idx > -1) fcmSaveData.repetidas.splice(idx, 1);
+                    });
 
-                            salvarProgressoAutomatico();
-                            atualizarInterfaceCarteira();
+                    idsA.forEach(id => { fcmSaveData.disponiveis.push(id); });
 
-                            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contrato));
-                            let dlAnchorElem = document.createElement('a');
-                            dlAnchorElem.setAttribute("href", dataStr);
-                            dlAnchorElem.setAttribute("download", `match_finalizado_comunidade.json`);
-                            dlAnchorElem.click();
+                    // Mantém a ordem idêntica à do envio para o Hash bater perfeitamente no Proponente
+                    let hashRetorno = gerarHashTokenTrocaLote(strIdsA, strIdsB, "LOTE");
+                    let tokenRetorno = `FCM-INLOTE-[${strIdsA}]-[${strIdsB}]-${hashRetorno}`;
 
-                            alert("✅ Lote assinado! Mande o arquivo de volta ao amigo para ele concluir a parte dele.");
+                    document.getElementById('lbl-token-resultado').value = tokenRetorno;
+                    document.getElementById('txt-token-parceiro-ler').value = "";
 
-                        } else if (contrato.tipo === "MATCH_CONCLUIDO") {
-                            let meuEstoqueLimpo = fcmSaveData.repetidas.map(x => parseInt(x));
-                            let robertoValido = true;
-                            
-                            contrato.loteRemoverProponente.forEach(idStr => {
-                                let id = parseInt(idStr);
-                                if (!meuEstoqueLimpo.includes(id)) robertoValido = false;
-                            });
+                    salvarProgressoAutomatico();
+                    atualizarInterfaceCarteira();
 
-                            if (!robertoValido) {
-                                alert("❌ Erro de integridade: As repetidas não batem!");
-                                return;
-                            }
+                    alert(`🎉 SUCESSO!\n\nAs cartas entraram nas suas Disponíveis. Copie o novo código de confirmação no campo verde e envie de volta para o Colecionador A finalizar a parte dele.`);
 
-                            let textoRobertoRecebeu = "";
-                            contrato.loteDarProponente.forEach(idStr => {
-                                let id = parseInt(idStr);
-                                let j = bancoMestreJogadores[id];
-                                textoRobertoRecebeu += `• Nº ${obterNumeroSlotPorId(id)} - ${j.nome} (${j.clubeNome})\n`;
-                            });
+                } else if(acao === "INLOTE") {
+                    if(fcmSaveData.disponiveis.includes(idsB[0]) || fcmSaveData.colados[idsB[0]]) {
+                        alert("Este contrato de troca em lote já foi liquidado anteriormente no seu sistema.");
+                        return;
+                    }
 
-                            contrato.loteRemoverProponente.forEach(idStr => {
-                                let id = parseInt(idStr);
-                                let idx = fcmSaveData.repetidas.map(x => parseInt(x)).indexOf(id);
-                                if (idx > -1) fcmSaveData.repetidas.splice(idx, 1);
-                            });
-                            contrato.loteDarProponente.forEach(idStr => {
-                                fcmSaveData.disponiveis.push(parseInt(idStr));
-                            });
+                    // O Proponente (A) recebe as cartas do lote B
+                    idsB.forEach(id => { fcmSaveData.disponiveis.push(id); });
 
-                            salvarProgressoAutomatico();
-                            atualizarInterfaceCarteira();
-                            
-                            alert(`🎉 TROCA INTEGRADA FINALIZADA!\n\nAs seguintes cartas entraram na sua aba "Disponíveis" para colar:\n\n${textoRobertoRecebeu}`);
-                        }
-                    } catch(err) { alert("❌ Arquivo inválido!"); }
-                };
-                reader.readAsText(file);
+                    document.getElementById('lbl-token-resultado').value = "";
+                    document.getElementById('txt-token-parceiro-ler').value = "";
+                    document.getElementById('txt-card-eu-dou').value = "";
+                    document.getElementById('txt-card-eu-quero').value = "";
+
+                    salvarProgressoAutomatico();
+                    atualizarInterfaceCarteira();
+
+                    alert(`🎉 TROCA EM LOTE TOTALMENTE CONCLUÍDA!\n\nSeu lote de propostas foi liquidado com sucesso. Novas figurinhas prontas para o álbum!`);
+                }
             });
 
             document.getElementById('btn-gastar-ticket').addEventListener('click', () => {
@@ -859,7 +889,7 @@
             });
 
             // =====================================================================
-            // 🚨 ENGINE DE COLAGEM FÍSICA CORRIGIDA (CHECA O HTML PRIMEIRO)
+            // 🚨 ENGINE DE COLAGEM FÍSICA CORRIGIDA (GRAFIA RESTAURADA)
             // =====================================================================
             document.getElementById('btn-colar-tudo').addEventListener('click', () => {
                 let disponiveis = fcmSaveData.disponiveis; 
@@ -872,13 +902,13 @@
                     if (infoSlot) {
                         let divSlotReal = document.getElementById(`slot-album-${infoSlot.numSlot}`);
                         
-                        // 🧠 CORREÇÃO CRÍTICA: Avalia o slot real na folha física!
+                        // 🧠 AVALIAÇÃO DO SLOT FÍSICO REAL DO ÁLBUM
                         if (divSlotReal && !divSlotReal.classList.contains('card-instalado')) {
                             let classeMoldura = (infoSlot.divisao === "Brasileirão") ? "moldura-serie-a" : "moldura-serie-b";
                             let j = bancoMestreJogadores[playerid];
                             divSlotReal.className = `slot card-instalado ${classeMoldura}`; 
                             divSlotReal.setAttribute("data-playerid", playerid);
-                            divSlotReal.innerHTML = generarHtmlCardMontado(j); 
+                            divSlotReal.innerHTML = gerarHtmlCardMontado(j); 
                             
                             fcmSaveData.colados[playerid] = true; 
                             coladas++;
@@ -894,7 +924,7 @@
                 fcmSaveData.disponiveis = novasRestantes; 
                 salvarProgressoAutomatico(); 
                 
-                listaCarteiraElement.innerHTML = "";
+                if (listaCarteiraElement) listaCarteiraElement.innerHTML = "";
                 atualizarInterfaceCarteira(); 
                 vincularClickZoomSlotsColados();
                 
